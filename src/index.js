@@ -31,7 +31,7 @@ for (const file of modules) {
 }
 
 client.on("ready", () => {
-    console.log("Kenshin is Online.");
+    console.log("Kami is Online.");
     client.user.setActivity("with shogun", {type: "PLAYING"});
 });
 
