@@ -1,6 +1,8 @@
 const PREFIX = "!";
+const GROUP_ID = 7887814;
 
 const Discord = require("discord.js");
+const { mainAPI } = require("./util/axios");
 const fs = require("fs");
 const firebase = require("firebase-admin");
 require('dotenv').config();
@@ -18,6 +20,25 @@ const client = new Discord.Client();
 const db = firebase.database();
 
 client.commands = [];
+client.clanList = [];
+client.clanIds = [];
+
+const populateGroupList = async () => {
+    let isFinalPage = false;
+    let currentPage = 0;
+    while (!isFinalPage) {
+        currentPage++;
+        const response = await mainAPI.get(`/groups/${GROUP_ID}/allies?page=${currentPage}`);
+        const clans = response.data.Groups;
+        clans.map(clan => {
+            client.clanList.push(clan);
+            client.clanIds.push(clan.Id);
+            isFinalPage = response.data.FinalPage;
+        })
+    }
+}
+
+populateGroupList();
 
 const modules = fs.readdirSync("./src/modules")
     .filter(file => file.endsWith('.js'));

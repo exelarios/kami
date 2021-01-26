@@ -1,11 +1,6 @@
 const { mainAPI, userAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
 
-const GROUP_ID = 7887814;
-
-const clanList = [];
-const clanIds = [];
-
 const formattedClanNames = {
     "Minamoto Clan ﾀ": "Minamoto",
     "The Sōma Clan": "Sōma",
@@ -31,21 +26,6 @@ const formattedClanNames = {
     "Imagawa-shi": "Imagawa",
     "Mori Clan 森": "Mori"
 };
-
-const getAllClans = async () => {
-    let isFinalPage = false;
-    let currentPage = 0;
-    while (!isFinalPage) {
-        currentPage++;
-        const response = await mainAPI.get(`/groups/${GROUP_ID}/allies?page=${currentPage}`);
-        const clans = response.data.Groups;
-        clans.map(clan => {
-            clanList.push(clan);
-            clanIds.push(clan.Id);
-            isFinalPage = response.data.FinalPage;
-        })
-    }
-}
 
 const getUserIdByUsername = async (username) => {
     const response = await mainAPI.get(`users/get-by-username?username=${username}`);
@@ -98,7 +78,68 @@ const removeAllObtainableRole = (message) => {
     return fetchAllRoles;
 }
 
-getAllClans();
+const setSocialStatusByGroupRank = async (message, clan) => {
+    if (clan.Rank) {
+        if (clan.Rank == 255) { // Faction Leader
+            const setLeader = await setMemberRoleByName(message, "Faction Leader");
+            if (!setLeader) {
+                message.reply("Failed to role you to Faction Leader, please ping a moderator.");
+            }
+        } else if (clan.Rank >= 225 && clan.Rank < 255) { // Clan Official
+            const setOfficial = await setMemberRoleByName(message, "Clan Official");
+            if (!setOfficial) {
+                message.reply("Failed to role you to Clan Official, please ping a moderator.");
+            }
+        } else {
+            const setMember = await setMemberRoleByName(message, "Clan Member");
+            if (!setMember) {
+                message.reply("Failed to role you to Clan Member, please ping a moderator.");
+            }
+        }
+    }
+}
+// todo: If a clan member leaves their clan. They must be set as Commoner if they don't have anymore groups.
+const requestPrimaryClan = async (message, userStore, userClans, username) => {
+    const clanListing = userClans.map((clan, index) => {
+        let output = "";
+        output += "[" + (index + 1) + "] "+ (formattedClanNames[clan.Name] || clan.Name);
+        return output;
+    })
+    message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
+    message.channel.send(clanListing);
+    const filter = msg => msg.author.id === message.author.id;
+    try {
+        const getAwaitMessage = await message.channel.awaitMessages(filter, {max: 1, time: 10000, errors: ["time", "max"]});
+        if (getAwaitMessage) {
+            const clanChoice = userClans[getAwaitMessage.first().content - 1];
+            if (clanChoice) {
+                const clanName = formattedClanNames[clanChoice.Name] || clanChoice.Name;
+                const nickname = `\[${clanName}\] ${clanChoice.Role.split(" ")[0]} | ${username}`;
+                message.member.setNickname(nickname.slice(0, 32))
+                    .catch (error => {
+                        message.reply("Couldn't set Nickname, might be lacking permissions");
+                    })
+                userStore.child(message.author.id).update({
+                    primary_clan: {
+                        Name: clanName,
+                        Id: clanChoice.Id,
+                        Rank: clanChoice.Rank,
+                        Role: clanChoice.Role
+                    },
+                    verify: true
+                });
+                removeAllObtainableRole(message);
+                setSocialStatusByGroupRank(message, clanChoice);
+            } else {
+                message.reply("Please input an vaild number corresponding to the clan name. You may retry by typing `!verify`");
+            }
+        }
+    } catch(error) {
+        message.reply("Await Response Timeout. You may retry by typing `!verify`")
+    }
+}
+
+// getAllClans();
 
 module.exports = {
     verify: {
@@ -115,7 +156,6 @@ module.exports = {
             }
 
             users.child(authorId).once("value", async (snapshot) => {
-
                 if (args[0] == undefined) {
                     if (!snapshot.val()) {
                         message.reply(
@@ -123,14 +163,18 @@ module.exports = {
                             "Once you have verfied type `!verify` once again without any arguments."
                         );
                     } else {
+                        if (snapshot.val().verify) {
+                            message.reply("You are already verified, if you want to change accounts, you may use `!reverify <username>`. If you think this is a mistake please ping a moderator.");
+                            return;
+                        }
                         const userId = snapshot.val().userId;
                         const username = snapshot.val().rbx_username;
                         const userStatus = await getUserStatsByUserId(userId);
+
                         if (userStatus == snapshot.val().verify_key) {
                             // User has been verified.
                             const userGroups = await getUserGroupsByUserId(userId);
-                            const userClans = userGroups.filter(element => clanIds.includes(element.Id));
-                            // message.reply("Congrats, you have now been verified.");
+                            const userClans = userGroups.filter(element => client.clanIds.includes(element.Id));
                             if (userClans.length <= 1) { // If user has one or less than one group.
                                 const clan = userClans[0];
                                 if (clan) {
@@ -142,8 +186,8 @@ module.exports = {
                                             Id: clan.Id,
                                             Rank: clan.Rank,
                                             Role: clan.Role,
-                                            verify: true
-                                        }
+                                        },
+                                        verify: true
                                     });
                                     message.member.setNickname(nickname.slice(0, 32))
                                         .catch (error => {
@@ -157,76 +201,23 @@ module.exports = {
                                             message.reply("Couldn't set Nickname, might be lacking permissions");
                                         })
                                     const setCommomer = await setMemberRoleByName(message, "Commoner");
-                                    if (setCommomer) {
-                                        console.log("Commoner");
+                                    if (!setCommomer) {
+                                        message.reply("Failed to role you to Commoner, please ping a moderator.");
                                     }
+                                    users.child(authorId).update({
+                                        verify: true
+                                    });
                                 }
                             } else {
-                                // If you're in muitple clans.
-                                const clanListing = userClans.map((clan, index) => {
-                                    let output = "";
-                                    output += "[" + (index + 1) + "] "+ (formattedClanNames[clan.Name] || clan.Name);
-                                    return output;
-                                })
-                                message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
-                                message.channel.send(clanListing);
-                                try {
-                                    const filter = msg => msg.author.id === message.author.id;
-                                    const response = await message.channel.awaitMessages(filter, {max: 1, time: 10000, errors: ["time", "max"]});
-                                    const clanChoice = userClans[response.first().content - 1];
-                                    if (clanChoice) {
-                                        const clanName = formattedClanNames[clanChoice.Name] || clanChoice.Name;
-                                        const nickname = `\[${clanName}\] ${clanChoice.Role.split(" ")[0]} | ${username}`;
-                                        message.member.setNickname(nickname.slice(0, 32))
-                                            .catch (error => {
-                                                message.reply("Couldn't set Nickname, might be lacking permissions");
-                                            })
-                                        users.child(authorId).update({
-                                            primary_clan: {
-                                                Name: clanName,
-                                                Id: clanChoice.Id,
-                                                Rank: clanChoice.Rank,
-                                                Role: clanChoice.Role
-                                            },
-                                            verify: true
-                                        });
-                                        const removeRole = await removeAllObtainableRole(message);
-                                        if (!removeRole) {
-                                            message.reply("Please try again, if this prompt shows up again. Please contact a moderator.");
-                                            return;
-                                        }
-                                        if (clanChoice.Rank) {
-                                            if (clanChoice.Rank == 255) { // Faction Leader
-                                                const setLeader = await setMemberRoleByName(message, "Faction Leader");
-                                                if (!setLeader) {
-                                                    message.reply("Failed to role you to Faction Leader, please ping a moderator.");
-                                                }
-                                            } else if (clanChoice.Rank >= 225 && clanChoice.Rank < 255) { // Clan Official
-                                                const setOfficial = await setMemberRoleByName(message, "Clan Official");
-                                                if (!setOfficial) {
-                                                    message.reply("Failed to role you to Clan Official, please ping a moderator.");
-                                                }
-                                            } else {
-                                                const setMember = await setMemberRoleByName(message, "Clan Member");
-                                                if (!setMember) {
-                                                    message.reply("Failed to role you to Clan Member, please ping a moderator.");
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        message.reply("Please input an vaild number corresponding to the clan name. You may retry by typing `!verify`");
-                                    }
-                                } catch (error) {
-                                    message.reply("Unfortunately, you didn't response within the limit. If you responded but the system didn't catch it, please report it to a moderator.");
-                                }
+                                requestPrimaryClan(message, users, userClans, username);
                             }
                         } else {
                             message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`);
                         }
                     }
                 } else {
-                    if (!snapshot.val()) {
-                    // If they aren't within the database, it will create a profile for the member.
+                    // When user invokes !Verify <username>
+                    if (!snapshot.val()) { // If they aren't within the database, it will create a profile for the member.
                         const userCode = uuidv4();
                         const rbx_userId = await getUserIdByUsername(args[0]);
                         users.child(authorId).update({
@@ -236,10 +227,14 @@ module.exports = {
                             userId: rbx_userId,
                             primary_clan: null
                         })
-                        client.users.cache.get(authorId).send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                        message.reply(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
                     } else {
-                    // If they try to verify again without verifying yet.
-                        client.users.cache.get(authorId).send(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
+                        const data = snapshot.val();
+                        if (data.verify) {
+                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
+                        } else {
+                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
+                        }
                     }
                 }
             })
@@ -250,45 +245,46 @@ module.exports = {
         usage: "!reverify <username>",
         description: "To reverify your social status, clan rank or change roblox username.",
         execute: async (client, message, db, args) => {
-            if (args[0] == undefined) {
+            if (args[0] != undefined) {
                 const users = db.ref("/users");
                 const authorId = message.author.id;
-                const userCode = uuidv4();
-                const rbx_userId = await getUserIdByUsername(args[0]);
-                users.child(authorId).update({
-                    verify: false,
-                    rbx_username: args[0],
-                    verify_key: userCode,
-                    userId: rbx_userId
-                })
-                client.users.cache.get(authorId).send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                users.child(authorId).once("value", async (snapshot) => {
+                    if (snapshot.val()) {
+                        const authorId = message.author.id;
+                        const userCode = uuidv4();
+                        const rbx_userId = await getUserIdByUsername(args[0]);
+                        users.child(authorId).update({
+                            verify: false,
+                            rbx_username: args[0],
+                            verify_key: userCode,
+                            userId: rbx_userId,
+                            primary_clan: null
+                        })
+                        removeAllObtainableRole(message);
+                        client.users.cache.get(authorId).send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                    }
+                });
             }
         }
     },
 
-    remove: {
-        usage: "!reverify <username>",
-        description: "To reverify your social status, clan rank or change roblox username.",
-        execute: async (client, message, db, args) => {
-            const removeRole = await removeAllObtainableRole(message);
-            if (removeRole) {
-                console.log("successfully removed role");
-            } else {
-                console.log("error");
-            }
+    updatestatus: {
+        usage: "!updatestatus",
+        description: "To update your social status, clan rank and nickname.",
+        execute: async (client, message, db) => {
+            const users = db.ref("/users");
+            const authorId = message.author.id;
+            users.child(authorId).once("value", async (snapshot) => {
+                if (snapshot.val()?.verify) {
+                    const userId = snapshot.val().userId;
+                    const username = snapshot.val().rbx_username;
+                    const userGroups = await getUserGroupsByUserId(userId);
+                    const userClans = userGroups.filter(element => client.clanIds.includes(element.Id));
+                    requestPrimaryClan(message, users, userClans, username);
+                } else {
+                    message.reply("You must be verified to use this command.");
+                }
+            });
         }
     },
-
-    clans: {
-        usage: "!clans",
-        description: "dank memes",
-        execute: async (client, message, db, args) => {
-            let result = [];
-            clanList.map((clan) => {
-                let formattedName = clan.Name;
-                result.push(formattedClanNames[formattedName] || formattedName);
-            })
-            message.reply(result);
-        }
-    }
 }
