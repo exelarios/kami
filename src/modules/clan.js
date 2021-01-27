@@ -1,3 +1,4 @@
+const { clans, roles } = require("../util/titles");
 const Discord = require('discord.js');
 
 const clanEmbed = (clan) => {
@@ -41,9 +42,9 @@ module.exports = {
             let result = [];
             client.clanList.map((clan) => {
                 let formattedName = clan.Name;
-                result.push(formattedClanNames[formattedName] || formattedName);
+                result.push(clans[formattedName] || formattedName);
             })
-            message.reply(result);
+            message.channel.send(result);
         }
     }
 }

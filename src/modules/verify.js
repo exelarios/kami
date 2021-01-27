@@ -151,7 +151,10 @@ module.exports = {
                         message.reply(
                             "You aren't recorded in our database, provide your Roblox's username as the second argument: `!verify <username>`\n" +
                             "Once you have verfied type `!verify` once again without any arguments."
-                        );
+                        ).then(reply => {
+                            reply.delete({ timeout: 5000 })
+                                .catch(console.error);
+                        });
                     } else {
                         if (snapshot.val().verify) {
                             message.reply("You are already verified, if you want to change accounts, you may use `!reverify <username>`. If you think this is a mistake please ping a moderator.");
@@ -195,6 +198,7 @@ module.exports = {
                             message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`);
                         }
                     }
+                    message.author.lastMessage.delete({timeout: 6000});
                 } else {
                     // When user invokes !Verify <username>
                     if (!snapshot.val()) { // If they aren't within the database, it will create a profile for the member.
@@ -207,7 +211,7 @@ module.exports = {
                             userId: rbx_userId,
                             primary_clan: null
                         })
-                        message.reply("Your verification key has been sent to you. If you didn't receive anything please contact moderator.");
+                        message.reply("Your verification key has been sent to you. If you didn't receive anything please ping a moderator.");
                         message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
                     } else {
                         const data = snapshot.val();
@@ -224,7 +228,7 @@ module.exports = {
     
     reverify: {
         usage: "!reverify <username>",
-        description: "To reverify your social status, clan rank or change roblox username.",
+        description: "Change your Roblox verification acccount, this will require you to restart the whole process.",
         execute: async (client, message, db, args) => {
             if (args[0] != undefined) {
                 const users = db.ref("/users");
