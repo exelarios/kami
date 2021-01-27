@@ -1,5 +1,13 @@
 
-const formattedClanNames = {
+const roles = [
+    "Faction Leader",
+    "Clan Official",
+    "Clan Member",
+    "Commoner"
+];
+
+const clans = {
+    "Ashikaga Clan 足利幕府": "Ashikaga",
     "Minamoto Clan ﾀ": "Minamoto",
     "The Sōma Clan": "Sōma",
     "Matsumae clan": "Matsumae",
@@ -25,4 +33,7 @@ const formattedClanNames = {
     "Mori Clan 森": "Mori"
 };
 
-export default formattedClanNames;
+module.exports = {
+    clans,
+    roles
+}

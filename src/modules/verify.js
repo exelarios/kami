@@ -1,31 +1,6 @@
 const { mainAPI, userAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
-
-const formattedClanNames = {
-    "Minamoto Clan ﾀ": "Minamoto",
-    "The Sōma Clan": "Sōma",
-    "Matsumae clan": "Matsumae",
-    "Ōuchi shi": "Ōuchi",
-    "Odаᅠ": "Oda",
-    "Kabukimono | 一軒家": "Kabukimono",
-    "• Iga-ryū • 伊賀流": "Iga-ryū",
-    "Hattori Clan": "Hattori",
-    "勝元家 | Katsumoto-Ka | 勝元家": "Katsumoto",
-    "Ishiyama Hongan-ji Temple": "Ishiyama",
-    "Thogoku Clan": "Thogoku",
-    "Iezusu-kai": "Iezusu",
-    "Daiju-ji": "Daiji",
-    "Toyotomi Clan | 豊臣氏": "Toyotomi",
-    "Date | 日付": "Date",
-    "Nakamura's Gang 中村": "Nakamura",
-    "Uesugiᅠ": "Uesugi",
-    "Ōtomo Clanᅠ": "Ōtomo",
-    "Shimazu Clan": "Shimazu",
-    "Hōjō-shi": "Hōjō",
-    "Azai Clan | Kiskaddon Family": "Azai",
-    "Imagawa-shi": "Imagawa",
-    "Mori Clan 森": "Mori"
-};
+const { clans, roles } = require("../util/titles");
 
 const getUserIdByUsername = async (username) => {
     const response = await mainAPI.get(`users/get-by-username?username=${username}`);
@@ -41,13 +16,6 @@ const getUserGroupsByUserId = async (userId) => {
     const response = await mainAPI.get(`users/${userId}/groups`);
     return response.data;
 }
-
-const roles = [
-    "Faction Leader",
-    "Clan Official",
-    "Clan Member",
-    "Commoner"
-];
 
 const setMemberRoleByName = async (message, roleName) => {
     const clanMemberRole = await message.guild.roles.cache.find(role => role.name == roleName);
@@ -98,11 +66,35 @@ const setSocialStatusByGroupRank = async (message, clan) => {
         }
     }
 }
-// todo: If a clan member leaves their clan. They must be set as Commoner if they don't have anymore groups.
+
+const setMemberAsCommomer = async (message, users, username) => {
+    const authorId = message.author.id;
+    const nickname = `\[Commoner\] ${username}`;
+    message.member.setNickname(nickname.slice(0, 32))
+        .catch (error => {
+            message.reply("Couldn't set Nickname, might be lacking permissions");
+        })
+    const setCommomer = await setMemberRoleByName(message, "Commoner");
+    if (!setCommomer) {
+        message.reply("Failed to role you to Commoner, please ping a moderator.");
+    }
+    users.child(authorId).update({
+        primary_clan: null,
+        verify: true
+    });
+}
+
 const requestPrimaryClan = async (message, userStore, userClans, username) => {
+
+    if (userClans.length < 1) {
+        removeAllObtainableRole(message);
+        setMemberAsCommomer(message, userStore, username);
+        return;
+    }
+
     const clanListing = userClans.map((clan, index) => {
         let output = "";
-        output += "[" + (index + 1) + "] "+ (formattedClanNames[clan.Name] || clan.Name);
+        output += "[" + (index + 1) + "] "+ (clans[clan.Name] || clan.Name);
         return output;
     })
     message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
@@ -113,7 +105,7 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
         if (getAwaitMessage) {
             const clanChoice = userClans[getAwaitMessage.first().content - 1];
             if (clanChoice) {
-                const clanName = formattedClanNames[clanChoice.Name] || clanChoice.Name;
+                const clanName = clans[clanChoice.Name] || clanChoice.Name;
                 const nickname = `\[${clanName}\] ${clanChoice.Role.split(" ")[0]} | ${username}`;
                 message.member.setNickname(nickname.slice(0, 32))
                     .catch (error => {
@@ -138,8 +130,6 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
         message.reply("Await Response Timeout. You may retry by typing `!verify`")
     }
 }
-
-// getAllClans();
 
 module.exports = {
     verify: {
@@ -178,7 +168,7 @@ module.exports = {
                             if (userClans.length <= 1) { // If user has one or less than one group.
                                 const clan = userClans[0];
                                 if (clan) {
-                                    const clanName = formattedClanNames[clan.Name] || clan.Name;
+                                    const clanName = clans[clan.Name] || clan.Name;
                                     const nickname = `\[${clanName}\] ${clan.Role.split(" ")[0]} | ${username}`;
                                     users.child(authorId).update({
                                         primary_clan: {
@@ -193,20 +183,10 @@ module.exports = {
                                         .catch (error => {
                                             message.reply("Couldn't set Nickname, might be lacking permissions");
                                         })
+                                    setMemberRoleByName(message, "Clan Member");
                                 } else {
                                     // if user isn't a member of any clan.
-                                    const nickname = `\[Commoner\] | ${username}`;
-                                    message.member.setNickname(nickname.slice(0, 32))
-                                        .catch (error => {
-                                            message.reply("Couldn't set Nickname, might be lacking permissions");
-                                        })
-                                    const setCommomer = await setMemberRoleByName(message, "Commoner");
-                                    if (!setCommomer) {
-                                        message.reply("Failed to role you to Commoner, please ping a moderator.");
-                                    }
-                                    users.child(authorId).update({
-                                        verify: true
-                                    });
+                                    setMemberAsCommomer(message, users, username);
                                 }
                             } else {
                                 requestPrimaryClan(message, users, userClans, username);
@@ -227,7 +207,7 @@ module.exports = {
                             userId: rbx_userId,
                             primary_clan: null
                         })
-                        message.reply(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                        message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
                     } else {
                         const data = snapshot.val();
                         if (data.verify) {
@@ -261,6 +241,7 @@ module.exports = {
                             primary_clan: null
                         })
                         removeAllObtainableRole(message);
+                        message.reply("Your verification key has been sent to you. If you didn't receive anything please contact moderator.");
                         client.users.cache.get(authorId).send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
                     }
                 });
