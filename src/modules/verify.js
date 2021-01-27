@@ -207,6 +207,7 @@ module.exports = {
                             userId: rbx_userId,
                             primary_clan: null
                         })
+                        message.reply("Your verification key has been sent to you. If you didn't receive anything please contact moderator.");
                         message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
                     } else {
                         const data = snapshot.val();
