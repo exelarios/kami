@@ -67,6 +67,7 @@ module.exports = {
                         )
                         .setTimestamp();
                     modLogChannel.send(receiptEmbed);
+                    violator.user.send(receiptEmbed);
                     removeAllMentionObtainableRole(violator);
                     const addPunishRole = violator.roles.add(getPunishedRole);
                     if (!addPunishRole) {
