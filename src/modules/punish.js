@@ -51,9 +51,9 @@ module.exports = {
                 const getPunishedRole = message.guild.roles.cache.find(role => role.name == "Punished");
                 if (getPunishedRole) {
                     const users = db.ref("/users");
-                    const modLogChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === "mod-log");
+                    const modLogChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
                     if (!modLogChannel) {
-                        message.reply("Failed to find mod-log");
+                        message.reply("Failed to find punish-log");
                     }
                     const receiptEmbed = new Discord.MessageEmbed()
                         .setTitle(violator.nickname)
