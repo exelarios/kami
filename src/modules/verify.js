@@ -78,6 +78,8 @@ const setMemberAsCommomer = async (message, users, username) => {
 
 const requestPrimaryClan = async (message, userStore, userClans, username) => {
 
+    const numOfClans = userClans.length;
+
     if (userClans.length < 1) {
         util.removeAllObtainableRole(message);
         setMemberAsCommomer(message, userStore, username);
@@ -207,7 +209,7 @@ module.exports = {
                     message.author.lastMessage.delete({timeout: 6000});
                 } else {
                     // When user invokes !Verify <username>
-                    if (!snapshot.val() && !snapshot.val().punish) { // If they aren't within the database, it will create a profile for the member.
+                    if (!snapshot.val() || !snapshot.val()?.punish) { // If they aren't within the database, it will create a profile for the member.
                         const userCode = uuidv4();
                         const rbx_userId = await getUserIdByUsername(args[0]);
                         users.child(authorId).update({
