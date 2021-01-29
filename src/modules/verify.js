@@ -118,7 +118,7 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
         return output;
     })
 
-    if (numOfClans >= 10) {
+    if (numOfClans <= 10) {
         let listing = await message.channel.send(clanListing);
         if (listing) {
             userClans.map((clan, index) => {
