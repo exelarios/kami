@@ -2,7 +2,7 @@ const PREFIX = "!";
 const GROUP_ID = 7887814;
 
 const Discord = require("discord.js");
-const { mainAPI } = require("./util/axios");
+const { groupAPI } = require("./util/axios");
 const fs = require("fs");
 const firebase = require("firebase-admin");
 require('dotenv').config();
@@ -23,22 +23,17 @@ client.commands = [];
 client.clanList = [];
 client.clanIds = [];
 
-const populateGroupList = async () => {
-    let isFinalPage = false;
-    let currentPage = 0;
-    while (!isFinalPage) {
-        currentPage++;
-        const response = await mainAPI.get(`/groups/${GROUP_ID}/allies?page=${currentPage}`);
-        const clans = response.data.Groups;
-        clans.map(clan => {
-            client.clanList.push(clan);
-            client.clanIds.push(clan.Id);
-            isFinalPage = response.data.FinalPage;
+groupAPI.get(`/v1/groups/${GROUP_ID}/relationships/allies?startRowIndex=0&maxRows=500`)
+    .then(res => {
+        const groups = res.data.relatedGroups;
+        client.clanList = groups;
+        groups.map(group => {
+            client.clanIds.push(group.id);
         })
-    }
-}
-
-populateGroupList();
+    })
+    .catch(error => {
+        console.log(error);
+    })
 
 const modules = fs.readdirSync("./src/modules")
     .filter(file => file.endsWith('.js'));

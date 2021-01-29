@@ -73,10 +73,10 @@ module.exports = {
                     if (!addPunishRole) {
                         message.reply("Failed to add `Punished` to violator.")
                     }
-                    const currentTime = new Date().getTime();
+                    const currentTime = new Date().getTime() / 1000;
                     const punishTime = 3600 * args[1];
                     users.child(violator.user.id).update({
-                        punish: currentTime + punishTime
+                        punish: Math.floor(currentTime) + punishTime
                     })
                 }
                 message.author.lastMessage.delete({timeout: 6000});

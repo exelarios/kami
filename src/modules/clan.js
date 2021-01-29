@@ -4,11 +4,11 @@ const Discord = require('discord.js');
 const clanEmbed = (clan) => {
    const embed = new Discord.MessageEmbed()
     .setColor("#0099ff")
-    .setTitle(clan.Name)
+    .setTitle(clan.name)
     .setAuthor("Clan Information")
     .addFields(
-        {name: "Leader", value: clan.Owner.Name},
-        {name: "Description", value: clan.Description}
+        {name: "Leader", value: clan.owner.username},
+        {name: "Description", value: clan.description}
     );
     return embed;
 }
@@ -21,12 +21,12 @@ module.exports = {
         execute: (client, message, db, args) => {
             if (args[0] != undefined) {
                 if (args[0].match(/^\d+$/)) {
-                    const getGroup = client.clanList.find(clan => clan.Id == args[0]);
+                    const getGroup = client.clanList.find(clan => clan.id == args[0]);
                     if (getGroup) {
                         message.channel.send(clanEmbed(getGroup));
                     }
                 } else {
-                    const getGroup = client.clanList.find(clan => clan.Name === args[0]);
+                    const getGroup = client.clanList.find(clan => clan.name === args[0]);
                     if (getGroup) {
                         message.channel.send(clanEmbed(getGroup));
                     }
@@ -41,7 +41,7 @@ module.exports = {
         execute: (client, message, db, args) => {
             let result = [];
             client.clanList.map((clan) => {
-                let formattedName = clan.Name;
+                let formattedName = clan.name;
                 result.push(clans[formattedName] || formattedName);
             })
             message.channel.send(result);

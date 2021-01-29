@@ -1,15 +1,20 @@
 const axios = require("axios");
 
 const mainAPI = axios.create({
-    baseURL: "http://api.roblox.com/"
+    baseURL: "https://api.roblox.com/"
 })
 
 const userAPI = axios.create({
-    baseURL: "https://users.roblox.com/v1/"
+    baseURL: "https://users.roblox.com/"
 
+})
+
+const groupAPI = axios.create({
+    baseURL: "https://groups.roblox.com/"
 })
 
 module.exports = {
     mainAPI,
-    userAPI
+    userAPI,
+    groupAPI
 }

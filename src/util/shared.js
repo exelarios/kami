@@ -29,6 +29,25 @@ const removeAllObtainableRole = (message) => {
     return fetchAllRoles;
 }
 
+// const populateGroupList = async () => {
+//     let isFinalPage = false;
+//     let currentPage = 0;
+//     while (!isFinalPage) {
+//         currentPage++;
+//         const response = await mainAPI.get(`/groups/${GROUP_ID}/allies?page=${currentPage}`);
+//         console.log(response);
+//         if (!response) {
+//             console.log(`Failed to fetch ${GROUP_ID}'s allies.`);
+//         }
+//         const clans = response.data.Groups;
+//         clans.map(clan => {
+//             client.clanList.push(clan);
+//             client.clanIds.push(clan.Id);
+//             isFinalPage = response.data.FinalPage;
+//         })
+//     }
+// }
+
 module.exports = {
     removeMemberRoleByName,
     removeAllObtainableRole,

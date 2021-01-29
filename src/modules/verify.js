@@ -1,31 +1,50 @@
-const { mainAPI, userAPI } = require("../util/axios");
+const { mainAPI, userAPI, groupAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
 const { clans } = require("../util/titles");
 const util = require("../util/shared");
 
 const getUserIdByUsername = async (username) => {
-    const response = await mainAPI.get(`users/get-by-username?username=${username}`);
-    return response.data.Id;
+    try {
+        const response = await mainAPI.get(`users/get-by-username?username=${username}`);
+        if (response) {
+            return response.data.Id;
+        }
+    } catch(error) {
+        console.log("GET_USER_ID_BY_USERNAME");
+    }
 }
 
 const getUserStatsByUserId = async (userId) => {
-    const response = await userAPI.get(`users/${userId}/status`);
-    return response.data.status.replace(/\s+/g, '');
+    try {
+        const response = await userAPI.get(`/v1/users/${userId}/status`);
+        if (response) {
+            return response.data.status.replace(/\s+/g, '');
+        }
+    } catch(error) {
+        console.log("GET_USER_STATS_BY_USER_ID");
+    }
 }
 
 const getUserGroupsByUserId = async (userId) => {
-    const response = await mainAPI.get(`users/${userId}/groups`);
-    return response.data;
+    try {
+        const response = await groupAPI.get(`/v2/users/${userId}/groups/roles`);
+        if (response) {
+            return response.data.data; // Some idiot decided to name the array of objects "data".
+        }
+    } catch(error) {
+        console.log("GET_USER_GROUP_BY_USER_ID");
+    }
 }
 
 const setSocialStatusByGroupRank = async (message, clan) => {
-    if (clan.Rank) {
-        if (clan.Rank == 255) { // Faction Leader
+    const rank = clan.role.rank;
+    if (rank) {
+        if (rank == 255) { // Faction Leader
             const setLeader = await util.setMemberRoleByName(message, "Faction Leader");
             if (!setLeader) {
                 message.reply("Failed to role you to Faction Leader, please ping a moderator.");
             }
-        } else if (clan.Rank >= 225 && clan.Rank < 255) { // Clan Official
+        } else if (rank >= 225 && rank < 255) { // Clan Official
             const setOfficial = await util.setMemberRoleByName(message, "Clan Official");
             if (!setOfficial) {
                 message.reply("Failed to role you to Clan Official, please ping a moderator.");
@@ -67,7 +86,7 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
 
     const clanListing = userClans.map((clan, index) => {
         let output = "";
-        output += "[" + (index + 1) + "] "+ (clans[clan.Name] || clan.Name);
+        output += "[" + (index + 1) + "] "+ (clans[clan.group.name] || clan.group.name);
         return output;
     })
     message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
@@ -78,8 +97,8 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
         if (getAwaitMessage) {
             const clanChoice = userClans[getAwaitMessage.first().content - 1];
             if (clanChoice) {
-                const clanName = clans[clanChoice.Name] || clanChoice.Name;
-                const nickname = `\[${clanName}\] ${clanChoice.Role.split(" ")[0]} | ${username}`;
+                const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
+                const nickname = `\[${clanName}\] ${clanChoice.role.name.split(" ")[0]} | ${username}`;
                 message.member.setNickname(nickname.slice(0, 32))
                     .catch (error => {
                         message.reply("Couldn't set Nickname, might be lacking permissions");
@@ -89,9 +108,9 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
                     punish: null,
                     primary_clan: {
                         Name: clanName,
-                        Id: clanChoice.Id,
-                        Rank: clanChoice.Rank,
-                        Role: clanChoice.Role,
+                        Id: clanChoice.group.id,
+                        Rank: clanChoice.role.rank,
+                        Role: clanChoice.role.name,
                     }
                 });
                 util.removeAllObtainableRole(message);
@@ -144,22 +163,24 @@ module.exports = {
                         const userId = snapshot.val().userId;
                         const username = snapshot.val().rbx_username;
                         const userStatus = await getUserStatsByUserId(userId);
-
                         if (userStatus == snapshot.val().verify_key) {
                             // User has been verified.
                             const userGroups = await getUserGroupsByUserId(userId);
-                            const userClans = userGroups.filter(element => client.clanIds.includes(element.Id));
+                            if (!userGroups) {
+                                console.error("Couldn't get user's groups");
+                            }
+                            const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
                             if (userClans.length <= 1) { // If user has one or less than one group.
                                 const clan = userClans[0];
                                 if (clan) {
-                                    const clanName = clans[clan.Name] || clan.Name;
-                                    const nickname = `\[${clanName}\] ${clan.Role.split(" ")[0]} | ${username}`;
+                                    const clanName = clans[clan.group.name] || clan.group.name;
+                                    const nickname = `\[${clanName}\] ${clan.role.name.split(" ")[0]} | ${username}`;
                                     users.child(authorId).update({
                                         primary_clan: {
                                             Name: clanName,
-                                            Id: clan.Id,
-                                            Rank: clan.Rank,
-                                            Role: clan.Role,
+                                            Id: clan.group.id,
+                                            Rank: clan.role.rank,
+                                            Role: clan.role.name,
                                         },
                                         verify: true
                                     });
@@ -186,7 +207,7 @@ module.exports = {
                     message.author.lastMessage.delete({timeout: 6000});
                 } else {
                     // When user invokes !Verify <username>
-                    if (!snapshot.val()?.verify) { // If they aren't within the database, it will create a profile for the member.
+                    if (!snapshot.val() && !snapshot.val().punish) { // If they aren't within the database, it will create a profile for the member.
                         const userCode = uuidv4();
                         const rbx_userId = await getUserIdByUsername(args[0]);
                         users.child(authorId).update({
@@ -252,8 +273,8 @@ module.exports = {
             users.child(authorId).once("value", async (snapshot) => {
                 const user = snapshot.val();
                 if (user) {
-                    const currentDate = new Date().getTime();
-                    if (user.punish > currentDate) {
+                    const currentTime = new Date().getTime() / 1000
+                    if (user.punish > Math.floor(currentTime)) {
                         message.reply("You aren't allowed to use this command at this time. Try again later.")
                             .then(reply => {
                                 reply.delete({ timeout: 5000 })
@@ -266,7 +287,7 @@ module.exports = {
                         const userId = snapshot.val().userId;
                         const username = snapshot.val().rbx_username;
                         const userGroups = await getUserGroupsByUserId(userId);
-                        const userClans = userGroups.filter(element => client.clanIds.includes(element.Id));
+                        const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
                         requestPrimaryClan(message, users, userClans, username);
                     } else {
                         message.reply("You must be verified to use this command.");
