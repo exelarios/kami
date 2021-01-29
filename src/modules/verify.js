@@ -77,52 +77,81 @@ const setMemberAsCommomer = async (message, users, username) => {
 }
 
 const requestPrimaryClan = async (message, userStore, userClans, username) => {
-
     const numOfClans = userClans.length;
+    const numberToEmoji = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
 
-    if (userClans.length < 1) {
+    if (numOfClans < 1) {
         util.removeAllObtainableRole(message);
         setMemberAsCommomer(message, userStore, username);
         return;
     }
 
+    function clanSelected(clanChoice) {
+        if (clanChoice) {
+            const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
+            const nickname = `\[${clanName}\] ${clanChoice.role.name.split(" ")[0]} | ${username}`;
+            message.member.setNickname(nickname.slice(0, 32))
+                .catch (error => {
+                    message.reply("Couldn't set Nickname, might be lacking permissions");
+                })
+            userStore.child(message.author.id).update({
+                verify: true,
+                punish: null,
+                primary_clan: {
+                    Name: clanName,
+                    Id: clanChoice.group.id,
+                    Rank: clanChoice.role.rank,
+                    Role: clanChoice.role.name,
+                }
+            });
+            util.removeAllObtainableRole(message);
+            setSocialStatusByGroupRank(message, clanChoice);
+        } else {
+            message.reply("Please input an vaild number corresponding to the clan name. You may retry by typing `!verify`");
+        }
+    }
+
+    let headingChoice = await message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
     const clanListing = userClans.map((clan, index) => {
         let output = "";
         output += "[" + (index + 1) + "] "+ (clans[clan.group.name] || clan.group.name);
         return output;
     })
-    message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
-    message.channel.send(clanListing);
-    const filter = msg => msg.author.id === message.author.id;
-    try {
-        const getAwaitMessage = await message.channel.awaitMessages(filter, {max: 1, time: 10000, errors: ["time", "max"]});
-        if (getAwaitMessage) {
-            const clanChoice = userClans[getAwaitMessage.first().content - 1];
-            if (clanChoice) {
-                const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
-                const nickname = `\[${clanName}\] ${clanChoice.role.name.split(" ")[0]} | ${username}`;
-                message.member.setNickname(nickname.slice(0, 32))
-                    .catch (error => {
-                        message.reply("Couldn't set Nickname, might be lacking permissions");
-                    })
-                userStore.child(message.author.id).update({
-                    verify: true,
-                    punish: null,
-                    primary_clan: {
-                        Name: clanName,
-                        Id: clanChoice.group.id,
-                        Rank: clanChoice.role.rank,
-                        Role: clanChoice.role.name,
-                    }
-                });
-                util.removeAllObtainableRole(message);
-                setSocialStatusByGroupRank(message, clanChoice);
-            } else {
-                message.reply("Please input an vaild number corresponding to the clan name. You may retry by typing `!verify`");
+
+    if (numOfClans >= 10) {
+        let listing = await message.channel.send(clanListing);
+        if (listing) {
+            userClans.map((clan, index) => {
+                listing.react(numberToEmoji[index]);
+            })
+            const filter = (reaction, user) => {
+                const containsEmoji = numberToEmoji.includes(reaction.emoji.name);
+                return containsEmoji && user.id === message.author.id;
             }
+            try {
+                const awaitReaction = await listing.awaitReactions(filter, {max: 1, time: 15000, errors: ["time"]});
+                const choiceOfEmoiji = awaitReaction.first().emoji.name;
+                const choice = numberToEmoji.indexOf(choiceOfEmoiji);
+                const clanChoice = userClans[choice];
+                clanSelected(clanChoice);
+            } catch(error) {
+                message.reply("Await Reaction Timeout. You may retry by typing `!verify`")
+            }
+            listing.delete();
+            headingChoice.delete();
         }
-    } catch(error) {
-        message.reply("Await Response Timeout. You may retry by typing `!verify`")
+    } else {
+        try {
+            message.channel.send(clanListing);
+            const filter = msg => msg.author.id === message.author.id;
+            const getAwaitMessage = await message.channel.awaitMessages(filter, {max: 1, time: 10000, errors: ["time", "max"]});
+            if (getAwaitMessage) {
+                const clanChoice = userClans[getAwaitMessage.first().content - 1];
+                clanSelected(clanChoice);
+            }
+        } catch(error) {
+            message.reply("Await Response Timeout. You may retry by typing `!verify`")
+        }
     }
 }
 
