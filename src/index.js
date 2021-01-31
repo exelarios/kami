@@ -5,6 +5,8 @@ const Discord = require("discord.js");
 const { groupAPI } = require("./util/axios");
 const fs = require("fs");
 const firebase = require("firebase-admin");
+const blacklist = require("./util/blacklist");
+const punish = require("./modules/punish").punish;
 require('dotenv').config();
 
 firebase.initializeApp({
@@ -52,12 +54,25 @@ client.on("ready", () => {
 });
 
 client.on("message", message => {
-    if (!message.content.startsWith(PREFIX) || message.author.bot) return;
 
-    const args = message.content.slice(PREFIX.length).split(/ +/);
-    const key = args.shift().toLowerCase();
+    if (message.author.bot) {
+        return;
+    }
 
-    client.commands[key]?.execute(client, message, db, args);
+    blacklist.map(word => {
+        if (message.content.toLowerCase().includes(word)) {
+            const args = [message.author, "24", `Ethnic Slur(s):\n "${message.content}"`];
+            punish.execute(client, message, db, args, true);
+            return;
+        }
+    })
+
+    if (message.content.startsWith(PREFIX)) {
+        const args = message.content.slice(PREFIX.length).split(/ +/);
+        const key = args.shift().toLowerCase();
+        client.commands[key]?.execute(client, message, db, args);
+    }
+
 });
 
 client.login(process.env.TOKEN);

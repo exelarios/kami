@@ -1,4 +1,3 @@
-
 const roles = [
     "Faction Leader",
     "Clan Official",
@@ -8,6 +7,7 @@ const roles = [
 ];
 
 const clans = {
+    "Shoni  Clan": "Shoni",
     "Ashikaga Clan 足利幕府": "Ashikaga",
     "Minamoto Clan ﾀ": "Minamoto",
     "The Sōma Clan": "Sōma",
@@ -16,7 +16,7 @@ const clans = {
     "Odаᅠ": "Oda",
     "Kabukimono | 一軒家": "Kabukimono",
     "• Iga-ryū • 伊賀流": "Iga-ryū",
-    "Hattori Clan": "Hattori",
+    "Hattori Clan ‌": "Hattori",
     "勝元家 | Katsumoto-Ka | 勝元家": "Katsumoto",
     "Ishiyama Hongan-ji Temple": "Ishiyama",
     "Thogoku Clan": "Thogoku",
@@ -31,7 +31,7 @@ const clans = {
     "Hōjō-shi": "Hōjō",
     "Azai Clan | Kiskaddon Family": "Azai",
     "Imagawa-shi": "Imagawa",
-    "Mori Clan 森": "Mori"
+    "Mori Clan 森": "Mōri"
 };
 
 module.exports = {

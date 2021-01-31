@@ -6,9 +6,7 @@ const util = require("../util/shared");
 const getUserIdByUsername = async (username) => {
     try {
         const response = await mainAPI.get(`users/get-by-username?username=${username}`);
-        if (response) {
-            return response.data.Id;
-        }
+        return response.data.Id;
     } catch(error) {
         console.log("GET_USER_ID_BY_USERNAME");
     }
@@ -17,9 +15,7 @@ const getUserIdByUsername = async (username) => {
 const getUserStatsByUserId = async (userId) => {
     try {
         const response = await userAPI.get(`/v1/users/${userId}/status`);
-        if (response) {
-            return response.data.status.replace(/\s+/g, '');
-        }
+        return response.data.status.replace(/\s+/g, '');
     } catch(error) {
         console.log("GET_USER_STATS_BY_USER_ID");
     }
@@ -28,9 +24,7 @@ const getUserStatsByUserId = async (userId) => {
 const getUserGroupsByUserId = async (userId) => {
     try {
         const response = await groupAPI.get(`/v2/users/${userId}/groups/roles`);
-        if (response) {
-            return response.data.data; // Some idiot decided to name the array of objects "data".
-        }
+        return response.data.data; // Some idiot decided to name the array of objects "data".
     } catch(error) {
         console.log("GET_USER_GROUP_BY_USER_ID");
     }
@@ -238,7 +232,18 @@ module.exports = {
                     message.author.lastMessage.delete({timeout: 6000});
                 } else {
                     // When user invokes !Verify <username>
-                    if (!snapshot.val() || !snapshot.val()?.punish) { // If they aren't within the database, it will create a profile for the member.
+                    const data = snapshot.val();
+                    if (data) {
+                        if (snapshot.val().punish) {
+                            message.reply("You aren't allowed to use this command at this time. Try again later.")
+                            return;
+                        }
+                        if (data.verify) {
+                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
+                        } else {
+                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
+                        }
+                    } else {
                         const userCode = uuidv4();
                         const rbx_userId = await getUserIdByUsername(args[0]);
                         users.child(authorId).update({
@@ -250,13 +255,6 @@ module.exports = {
                         })
                         message.reply("Your verification key has been sent to you. If you didn't receive anything please ping a moderator.");
                         message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
-                    } else {
-                        const data = snapshot.val();
-                        if (data.verify) {
-                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
-                        } else {
-                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
-                        }
                     }
                 }
             })
@@ -273,7 +271,11 @@ module.exports = {
                 users.child(authorId).once("value", async (snapshot) => {
                     if (snapshot.val()) {
                         if (snapshot.val().punish) {
-                            message.reply("You aren't allowed to use this command at this time. Try again later.");
+                            message.reply("You aren't allowed to use this command at this time. Try again later.")
+                                .then(reply => {
+                                    reply.delete({ timeout: 5000 })
+                                        .catch(console.error);
+                                });
                             return;
                         }
                         const authorId = message.author.id;
@@ -284,7 +286,7 @@ module.exports = {
                             rbx_username: args[0],
                             verify_key: userCode,
                             userId: rbx_userId,
-                            primary_clan: null
+                            primary_clan: null,
                         })
                         util.removeAllObtainableRole(message);
                         message.reply("Your verification key has been sent to you. If you didn't receive anything please contact a moderator.");
