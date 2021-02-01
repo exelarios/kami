@@ -175,75 +175,70 @@ module.exports = {
                                 .catch(console.error);
                         });
                     } else {
-                        if (snapshot.val()?.punish) {
+                        const currentTime = new Date().getTime() / 1000
+                        if (snapshot.val().punish > Math.floor(currentTime)) {
                             message.reply("You aren't allowed to use this command at this time. Try again later.");
                             return;
                         }
 
-                        if (snapshot.val().verify) {
-                            message.reply("You are already verified, if you want to change accounts,"
-                            + "you may use `!reverify <username>`. If you think this is a mistake please ping a moderator.");
-                            return;
-                        }
-                        const userId = snapshot.val().userId;
-                        const username = snapshot.val().rbx_username;
-                        const userStatus = await getUserStatsByUserId(userId);
-                        if (userStatus == snapshot.val().verify_key) {
-                            // User has been verified.
-                            const userGroups = await getUserGroupsByUserId(userId);
-                            if (!userGroups) {
-                                console.error("Couldn't get user's groups");
-                            }
-                            const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
-                            if (userClans.length <= 1) { // If user has one or less than one group.
-                                const clan = userClans[0];
-                                if (clan) {
-                                    const clanName = clans[clan.group.name] || clan.group.name;
-                                    const nickname = `\[${clanName}\] ${clan.role.name.split(" ")[0]} | ${username}`;
-                                    users.child(authorId).update({
-                                        primary_clan: {
-                                            Name: clanName,
-                                            Id: clan.group.id,
-                                            Rank: clan.role.rank,
-                                            Role: clan.role.name,
-                                        },
-                                        verify: true
-                                    });
-                                    message.member.setNickname(nickname.slice(0, 32))
-                                        .catch (error => {
-                                            message.reply("Couldn't set Nickname, might be lacking permissions");
-                                        })
-                                    util.setMemberRoleByName(message, "Clan Member");
-                                } else {
-                                    // if user isn't a member of any clan.
-                                    setMemberAsCommomer(message, users, username);
-                                }
+                        if (snapshot.val().verify != undefined) {
+                            if (snapshot.val().verify == true) {
+                                message.reply("You are already verified, if you want to change accounts,"
+                                + "you may use `!reverify <username>`. If you think this is a mistake please ping a moderator.");
                             } else {
-                                requestPrimaryClan(message, users, userClans, username);
+                                const userId = snapshot.val().userId;
+                                const username = snapshot.val().rbx_username;
+                                const userStatus = await getUserStatsByUserId(userId);
+                                if (userStatus == snapshot.val().verify_key) {
+                                    // User has been verified.
+                                    const userGroups = await getUserGroupsByUserId(userId);
+                                    if (!userGroups) {
+                                        console.error("Couldn't get user's groups");
+                                    }
+                                    const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
+                                    if (userClans.length <= 1) { // If user has one or less than one group.
+                                        const clan = userClans[0];
+                                        if (clan) {
+                                            const clanName = clans[clan.group.name] || clan.group.name;
+                                            const nickname = `\[${clanName}\] ${clan.role.name.split(" ")[0]} | ${username}`;
+                                            users.child(authorId).update({
+                                                primary_clan: {
+                                                    Name: clanName,
+                                                    Id: clan.group.id,
+                                                    Rank: clan.role.rank,
+                                                    Role: clan.role.name,
+                                                },
+                                                verify: true
+                                            });
+                                            util.removeAllObtainableRole(message);
+                                            message.member.setNickname(nickname.slice(0, 32))
+                                                .catch (error => {
+                                                    message.reply("Couldn't set Nickname, might be lacking permissions");
+                                                })
+                                            util.setMemberRoleByName(message, "Clan Member");
+                                        } else {
+                                            // if user isn't a member of any clan.
+                                            setMemberAsCommomer(message, users, username);
+                                        }
+                                    } else {
+                                        requestPrimaryClan(message, users, userClans, username);
+                                    }
+                                } else {
+                                    message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`)
+                                        .then(reply => {
+                                        reply.delete({ timeout: 5000 })
+                                            .catch(console.error);
+                                    });
+                                }
                             }
                         } else {
-                            message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`)
-                                .then(reply => {
-                                reply.delete({ timeout: 5000 })
-                                    .catch(console.error);
-                            });
+                            message.reply("You must invoke `!verify <username>` before you can use this command");
                         }
                     }
                     message.author.lastMessage.delete({timeout: 6000});
                 } else {
                     // When user invokes !Verify <username>
-                    const data = snapshot.val();
-                    if (data) {
-                        if (snapshot.val().punish) {
-                            message.reply("You aren't allowed to use this command at this time. Try again later.")
-                            return;
-                        }
-                        if (data.verify) {
-                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
-                        } else {
-                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
-                        }
-                    } else {
+                    async function createProfile() {
                         const userCode = uuidv4();
                         const rbx_userId = await getUserIdByUsername(args[0]);
                         users.child(authorId).update({
@@ -255,6 +250,30 @@ module.exports = {
                         })
                         message.reply("Your verification key has been sent to you. If you didn't receive anything please ping a moderator.");
                         message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                    }
+
+                    const data = snapshot.val();
+                    if (data) { // Member may have a profile created.
+                        const currentTime = new Date().getTime() / 1000;
+                        if (snapshot.val().punish > Math.floor(currentTime)) {
+                            message.reply("You aren't allowed to use this command at this time. Try again later.");
+                            return;
+                        } else if (data.verify == undefined) {
+                            createProfile();
+                            return;
+                        }
+
+                        if (data.verify == true) {
+                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
+                            return;
+                        } else {
+                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
+                            return;
+                        }
+
+                    } else {
+                        // Member has no DATA at all.
+                        createProfile();
                     }
                 }
             })
@@ -270,12 +289,9 @@ module.exports = {
                 const authorId = message.author.id;
                 users.child(authorId).once("value", async (snapshot) => {
                     if (snapshot.val()) {
-                        if (snapshot.val().punish) {
-                            message.reply("You aren't allowed to use this command at this time. Try again later.")
-                                .then(reply => {
-                                    reply.delete({ timeout: 5000 })
-                                        .catch(console.error);
-                                });
+                        const currentTime = new Date().getTime() / 1000
+                        if (snapshot.val().punish > Math.floor(currentTime)) {
+                            message.reply("You aren't allowed to use this command at this time. Try again later.");
                             return;
                         }
                         const authorId = message.author.id;
@@ -297,8 +313,8 @@ module.exports = {
         }
     },
 
-    updatestatus: {
-        usage: "!updatestatus",
+    update: {
+        usage: "!update",
         description: "To update your social status, clan rank and nickname.",
         execute: async (client, message, db) => {
             const users = db.ref("/users");
@@ -323,8 +339,18 @@ module.exports = {
                         const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
                         requestPrimaryClan(message, users, userClans, username);
                     } else {
-                        message.reply("You must be verified to use this command.");
+                        message.reply("You must be verified to use this command.")
+                            .then(reply => {
+                                reply.delete({ timeout: 5000 })
+                                    .catch(console.error);
+                            });
                     }
+                } else {
+                    message.reply("Please verify before using this command.")
+                        .then(reply => {
+                            reply.delete({ timeout: 5000 })
+                                .catch(console.error);
+                        });
                 }
             });
         }

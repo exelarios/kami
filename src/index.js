@@ -54,7 +54,6 @@ client.on("ready", () => {
 });
 
 client.on("message", message => {
-
     if (message.author.bot) {
         return;
     }
@@ -72,7 +71,6 @@ client.on("message", message => {
         const key = args.shift().toLowerCase();
         client.commands[key]?.execute(client, message, db, args);
     }
-
 });
 
 client.login(process.env.TOKEN);

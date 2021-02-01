@@ -12,5 +12,6 @@ module.exports = [
     "niggar", 
     "nigguh", 
     "niggress", 
-    "nigette"
+    "nigette",
+    "faggot",
 ]
