@@ -53,6 +53,22 @@ client.on("ready", () => {
     client.user.setActivity("with shogun", {type: "PLAYING"});
 });
 
+client.on("guildMemberAdd", member => {
+    const users = db.ref("/users");
+    const authorId = member.user.id;
+    users.child(authorId).once("value", async (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+        const currentTime = new Date().getTime() / 1000;
+        if (data.punish > Math.floor(currentTime)) {
+            const getPunishedRole = member.guild.roles.cache.find(role => role.name == "Punished");
+            if (getPunishedRole) {
+                member.roles.add(getPunishedRole);
+            }
+        }
+    });
+});
+
 client.on("message", message => {
     if (message.author.bot) {
         return;
