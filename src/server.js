@@ -74,6 +74,14 @@ client.on("message", message => {
         return;
     }
 
+    if (message.content.toLowerCase().includes("#freeyekta")) {
+        message.author.send("Ur an idiot; get some help.");
+    }
+
+    if (message.content.toLowerCase().includes("is tora gay")) {
+        message.reply("Yes, he is. That's why he has a wife to cover it up.");
+    }
+
     blacklist.map(word => {
         if (message.content.toLowerCase().includes(word)) {
             const args = [message.author, "24", `Ethnic Slur(s):\n "${message.content}"`];
