@@ -267,7 +267,7 @@ module.exports = {
                             message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
                             return;
                         } else {
-                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. If you want to change roblox account, please use \`!reverify <username>\``);
+                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
                             return;
                         }
 

@@ -7,6 +7,8 @@ const roles = [
 ];
 
 const clans = {
+    "Hosokawa | 細川氏": "Hosokawa",
+    "Yamana-shi": "Yamana",
     "Shoni  Clan": "Shoni",
     "Ashikaga Clan 足利幕府": "Ashikaga",
     "Minamoto Clan ﾀ": "Minamoto",

@@ -1,5 +1,6 @@
 const Discord = require("discord.js");
 const { roles } = require("../util/titles");
+const util = require("../util/shared");
 
 function combineArrayAtIndex(args, starting) {
     let result = "";
@@ -9,20 +10,13 @@ function combineArrayAtIndex(args, starting) {
     return result;
 }
 
-async function removeMentionRoleByName(member, roleName) {
-    const clanMemberRole = await member.roles.cache.find(role => role.name == roleName);
-    if (clanMemberRole) {
-        member.roles.remove(clanMemberRole);
-        return true;
-    }
-    return false;
-}
-
 function removeAllMentionObtainableRole(member) {
-    const fetchAllRoles = roles.map(role => {
-        removeMentionRoleByName(member, role);
-    })
-    return fetchAllRoles;
+    roles.map((role) => {
+        const clanMemberRole = member.roles.cache.find(memberRole => memberRole.name == role);
+        if (clanMemberRole) {
+            member.roles.remove(clanMemberRole);
+        }
+    });
 }
 
 module.exports = {
@@ -61,14 +55,17 @@ module.exports = {
                         if (!modLogChannel) {
                             message.reply("Failed to find punish-log");
                         }
+                        const currentTime = new Date().getTime() / 1000;
+                        const punishTime = 3600 * args[1];
                         const receiptEmbed = new Discord.MessageEmbed()
                             .setTitle(violator.nickname || violator.user.username)
                             .setAuthor("Violation Report")
                             .setThumbnail(violator.user.displayAvatarURL())
                             .addField("Username", `${violator.user.username}#${violator.user.discriminator}`, true)
-                            .addField("Duration", `${args[1]} hours`, true)
+                            .addField("Sentence", `${args[1]} hours`, true)
                             .addFields(
                                 {name: "Reasoning", value: reasoning},
+                                {name: "Release Time", value: util.getReadableTime(Math.floor(currentTime) + punishTime)},
                                 {name: "Filed by", value: `${message.author.username}#${message.author.discriminator}`}
                             )
                             .setTimestamp();
@@ -79,8 +76,6 @@ module.exports = {
                         if (!addPunishRole) {
                             message.reply("Failed to add `Punished` to violator.")
                         }
-                        const currentTime = new Date().getTime() / 1000;
-                        const punishTime = 3600 * args[1];
                         users.child(violator.user.id).update({
                             punish: Math.floor(currentTime) + punishTime
                         })

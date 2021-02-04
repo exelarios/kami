@@ -29,6 +29,18 @@ const removeAllObtainableRole = (message) => {
     return fetchAllRoles;
 }
 
+function getReadableTime(time) {
+    const date = new Date(time * 1000);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const year = date.getFullYear();
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const hour = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    return `${month} ${day}, ${year} @ ${hour}:${minutes}:${seconds} PST`
+}
+
 // const populateGroupList = async () => {
 //     let isFinalPage = false;
 //     let currentPage = 0;
@@ -51,5 +63,6 @@ const removeAllObtainableRole = (message) => {
 module.exports = {
     removeMemberRoleByName,
     removeAllObtainableRole,
-    setMemberRoleByName
+    setMemberRoleByName,
+    getReadableTime
 }

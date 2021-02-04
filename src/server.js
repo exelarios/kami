@@ -1,5 +1,8 @@
 const PREFIX = "!";
 const GROUP_ID = 7887814;
+const SERVER_ID = 755140348753215488;
+const TEST_ID = 803455843143385098;
+const INTERVAL = 10 * 60 * 1000;
 
 const Discord = require("discord.js");
 const { groupAPI } = require("./util/axios");
@@ -7,6 +10,7 @@ const fs = require("fs");
 const firebase = require("firebase-admin");
 const blacklist = require("./util/blacklist");
 const punish = require("./modules/punish").punish;
+const util = require("./util/shared");
 require('dotenv').config();
 
 firebase.initializeApp({
@@ -51,6 +55,38 @@ for (const file of modules) {
 client.on("ready", () => {
     console.log("Kami is Online.");
     client.user.setActivity("with shogun", {type: "PLAYING"});
+    const server = client.guilds.cache.find(guild => guild.id == SERVER_ID || guild.id == TEST_ID);
+    if (server) {
+        const users = db.ref("/users");
+        const punishRole = server.roles.cache.find(role => role.name == "Punished");
+        if (punishRole) {
+            const modLogChannel = server.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
+            if (!modLogChannel) {
+                message.reply("Failed to find punish-log");
+            }
+            setInterval(function() {
+                punishRole.members.map(member => {
+                    const memberId = member.user.id;
+                    users.child(memberId).once("value", async snapshot => {
+                        let data = snapshot.val();
+                        if (!data) return;
+                        const currentTime = new Date().getTime() / 1000;
+                        if (data.punish <= Math.floor(currentTime)) {
+                            const embed = new Discord.MessageEmbed()
+                                .setAuthor("Release Report")
+                                .setThumbnail(member.user.displayAvatarURL())
+                                .setDescription(`${member.user.nickname || member.user.username}(${member.user.username}#${member.user.discriminator}) has been released from punished at ${util.getReadableTime(currentTime)}.`)
+                            modLogChannel.send(embed);
+                            member.roles.remove(punishRole);
+                            users.child(memberId).update({
+                                punish: null,
+                            });
+                        }
+                    });
+                });
+            }, INTERVAL);
+        }
+    }
 });
 
 client.on("guildMemberAdd", member => {
@@ -72,14 +108,6 @@ client.on("guildMemberAdd", member => {
 client.on("message", message => {
     if (message.author.bot) {
         return;
-    }
-
-    if (message.content.toLowerCase().includes("#freeyekta")) {
-        message.author.send("Ur an idiot; get some help.");
-    }
-
-    if (message.content.toLowerCase().includes("is tora gay")) {
-        message.reply("Yes, he is. That's why he has a wife to cover it up.");
     }
 
     blacklist.map(word => {
