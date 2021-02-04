@@ -2,7 +2,6 @@ const PREFIX = "!";
 const GROUP_ID = 7887814;
 const SERVER_ID = 755140348753215488;
 const TEST_ID = 803455843143385098;
-const INTERVAL = 1 * 60 * 1000;
 
 const Discord = require("discord.js");
 const { groupAPI } = require("./util/axios");
@@ -12,6 +11,8 @@ const blacklist = require("./util/blacklist");
 const punish = require("./modules/punish").punish;
 const util = require("./util/shared");
 require('dotenv').config();
+
+const INTERVAL = process.env.INTERVAL;
 
 firebase.initializeApp({
     credential: firebase.credential.cert({
