@@ -41,5 +41,13 @@ module.exports = {
             .addFields(fields);
             message.reply(embed);
         }
+    },
+
+    version: {
+        usage: "!version",
+        description: "displays the current version.",
+        execute: (client, message, db) => {
+            message.reply(client.version);
+        }
     }
 }

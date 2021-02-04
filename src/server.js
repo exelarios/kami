@@ -2,7 +2,7 @@ const PREFIX = "!";
 const GROUP_ID = 7887814;
 const SERVER_ID = 755140348753215488;
 const TEST_ID = 803455843143385098;
-const INTERVAL = 10 * 60 * 1000;
+const INTERVAL = 1 * 60 * 1000;
 
 const Discord = require("discord.js");
 const { groupAPI } = require("./util/axios");
@@ -28,6 +28,7 @@ const db = firebase.database();
 client.commands = [];
 client.clanList = [];
 client.clanIds = [];
+client.version = "0.1.10";
 
 groupAPI.get(`/v1/groups/${GROUP_ID}/relationships/allies?startRowIndex=0&maxRows=500`)
     .then(res => {
