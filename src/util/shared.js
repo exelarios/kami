@@ -36,9 +36,10 @@ function getReadableTime(time) {
     const month = months[date.getMonth()];
     const day = date.getDate();
     const hour = date.getHours();
+    const amPm = date.getHours() < 12 ? 'AM' : 'PM'; 
     const minutes = date.getMinutes();
     const seconds = date.getSeconds();
-    return `${month} ${day}, ${year} @ ${hour}:${minutes}:${seconds} PST`
+    return `${month} ${day}, ${year} @ ${hour}:${minutes}:${seconds} ${amPm} UTC`
 }
 
 // const populateGroupList = async () => {
