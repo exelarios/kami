@@ -29,7 +29,7 @@ const db = firebase.database();
 client.commands = [];
 client.clanList = [];
 client.clanIds = [];
-client.version = "0.1.11";
+client.version = "0.1.12";
 
 groupAPI.get(`/v1/groups/${GROUP_ID}/relationships/allies?startRowIndex=0&maxRows=500`)
     .then(res => {
@@ -74,12 +74,16 @@ client.on("ready", () => {
                         if (!data) return;
                         const currentTime = new Date().getTime() / 1000;
                         if (data.punish <= Math.floor(currentTime)) {
-                            const embed = new Discord.MessageEmbed()
+                            const releaseReport = new Discord.MessageEmbed()
                                 .setAuthor("Release Report")
                                 .setThumbnail(member.user.displayAvatarURL())
                                 .setDescription(`${member.nickname || member.user.username}(${member.user.username}#${member.user.discriminator}) has been released from punished at ${util.getReadableTime(currentTime)}.`)
-                            modLogChannel.send(embed);
-                            member.user.send(embed);
+                            modLogChannel.send(releaseReport);
+                            try {
+                                member.user.send(releaseReport);
+                            } catch(error) {
+                                console.error(error);
+                            }
                             member.roles.remove(punishRole);
                             users.child(memberId).update({
                                 punish: null,

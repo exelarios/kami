@@ -8,7 +8,7 @@ const getUserIdByUsername = async (username) => {
         const response = await mainAPI.get(`users/get-by-username?username=${username}`);
         return response.data.Id;
     } catch(error) {
-        console.log("GET_USER_ID_BY_USERNAME");
+        console.log("FAILED: GET_USER_ID_BY_USERNAME");
     }
 }
 
@@ -17,7 +17,7 @@ const getUserStatsByUserId = async (userId) => {
         const response = await userAPI.get(`/v1/users/${userId}/status`);
         return response.data.status.replace(/\s+/g, '');
     } catch(error) {
-        console.log("GET_USER_STATS_BY_USER_ID");
+        console.log("FAILED: GET_USER_STATS_BY_USER_ID");
     }
 }
 
@@ -26,7 +26,7 @@ const getUserGroupsByUserId = async (userId) => {
         const response = await groupAPI.get(`/v2/users/${userId}/groups/roles`);
         return response.data.data; // Some idiot decided to name the array of objects "data".
     } catch(error) {
-        console.log("GET_USER_GROUP_BY_USER_ID");
+        console.log("FAILED: GET_USER_GROUP_BY_USER_ID");
     }
 }
 
@@ -83,7 +83,8 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
     function clanSelected(clanChoice) {
         if (clanChoice) {
             const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
-            const nickname = `\[${clanName}\] ${clanChoice.role.name.split(" ")[0]} | ${username}`;
+            const clanRank = clanChoice.role.name.replace(/[^a-zA-ZōŌū-\s]/, "").split(" ")[0];
+            const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
             message.member.setNickname(nickname.slice(0, 32))
                 .catch (error => {
                     message.reply("Couldn't set Nickname, might be lacking permissions");
@@ -200,7 +201,8 @@ module.exports = {
                                         const clan = userClans[0];
                                         if (clan) {
                                             const clanName = clans[clan.group.name] || clan.group.name;
-                                            const nickname = `\[${clanName}\] ${clan.role.name.split(" ")[0]} | ${username}`;
+                                            const clanRank = clan.role.name.replace(/[^a-zA-ZōŌū-\s]/, "").split(" ")[0];
+                                            const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
                                             users.child(authorId).update({
                                                 primary_clan: {
                                                     Name: clanName,
@@ -215,7 +217,7 @@ module.exports = {
                                                 .catch (error => {
                                                     message.reply("Couldn't set Nickname, might be lacking permissions");
                                                 })
-                                            util.setMemberRoleByName(message, "Clan Member");
+                                            setSocialStatusByGroupRank(message, clan);
                                         } else {
                                             // if user isn't a member of any clan.
                                             setMemberAsCommomer(message, users, username);
@@ -235,7 +237,7 @@ module.exports = {
                             message.reply("You must invoke `!verify <username>` before you can use this command");
                         }
                     }
-                    message.author.lastMessage.delete({timeout: 6000});
+                    message && message.author.lastMessage.delete({timeout: 6000}); // check if the message still exist before deleting it.
                 } else {
                     // When user invokes !Verify <username>
                     async function createProfile() {
@@ -248,8 +250,12 @@ module.exports = {
                             userId: rbx_userId,
                             primary_clan: null
                         })
-                        message.reply("Your verification key has been sent to you. If you didn't receive anything please ping a moderator.");
-                        message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                        try {
+                            message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                            message.reply("Your verification key has been sent to you. If you didn't receive anything please ping a moderator.");
+                        } catch(error) {
+                            message.reply(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                        }
                     }
 
                     const data = snapshot.val();
@@ -284,6 +290,12 @@ module.exports = {
         usage: "!reverify <username>",
         description: "Change your Roblox verification acccount, this will require you to restart the whole process.",
         execute: async (client, message, db, args) => {
+
+            if (message.channel.type == "dm") {
+                message.reply("Please retry the command on a channel.");
+                return;
+            }
+
             if (args[0] != undefined) {
                 const users = db.ref("/users");
                 const authorId = message.author.id;
@@ -309,6 +321,8 @@ module.exports = {
                         client.users.cache.get(authorId).send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
                     }
                 });
+            } else {
+                message.reply("Requires a second argument as a Roblox's username.");
             }
         }
     },
@@ -317,6 +331,12 @@ module.exports = {
         usage: "!update",
         description: "To update your social status, clan rank and nickname.",
         execute: async (client, message, db) => {
+
+            if (message.channel.type == "dm") {
+                message.reply("Please retry the command on a channel.");
+                return;
+            }
+
             const users = db.ref("/users");
             const authorId = message.author.id;
             users.child(authorId).once("value", async (snapshot) => {
