@@ -49,42 +49,44 @@ module.exports = {
             const target = message.mentions.users.first() || args[0];
             if (target) {
                 const violator = message.guild.members.cache.get(target.id);
-                const getPunishedRole = message.guild.roles.cache.find(role => role.name == "Punished");
-                if (getPunishedRole) {
-                    const users = db.ref("/users");
-                    const modLogChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
-                    if (!modLogChannel) {
-                        message.reply("Failed to find punish-log");
+                if (violator) {
+                    const getPunishedRole = message.guild.roles.cache.find(role => role.name == "Punished");
+                    if (getPunishedRole) {
+                        const users = db.ref("/users");
+                        const modLogChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
+                        if (!modLogChannel) {
+                            message.reply("Failed to find punish-log");
+                        }
+                        const currentTime = new Date().getTime() / 1000;
+                        const punishTime = 3600 * args[1];
+                        const releaseTime = util.getReadableTime(Math.floor(currentTime) + punishTime);
+                        const receiptEmbed = new Discord.MessageEmbed()
+                            .setTitle(violator.nickname || violator.user.username)
+                            .setAuthor("Violation Report")
+                            .setThumbnail(violator.user.displayAvatarURL())
+                            .addField("Username", `${violator.user.username}#${violator.user.discriminator}`, true)
+                            .addField("Sentence", `${args[1]} hours`, true)
+                            .addFields(
+                                {name: "Reasoning", value: reasoning},
+                                {name: "Release Time", value: releaseTime},
+                                {name: "Filed by", value: `${message.author.username}#${message.author.discriminator}`}
+                            )
+                            .setTimestamp();
+                        modLogChannel.send(receiptEmbed);
+                        try {
+                            violator.user.send(receiptEmbed);
+                        } catch {
+                            modLogChannel.send(`Failed to send a copy of Violation Report to ${violator.user.username}#${violator.user.discriminator}. Direct Message might be disabled.`);
+                        }
+                        removeAllMentionObtainableRole(violator);
+                        const addPunishRole = violator.roles.add(getPunishedRole);
+                        if (!addPunishRole) {
+                            message.reply("Failed to add `Punished` to violator.")
+                        }
+                        users.child(violator.user.id).update({
+                            punish: Math.floor(currentTime) + punishTime
+                        })
                     }
-                    const currentTime = new Date().getTime() / 1000;
-                    const punishTime = 3600 * args[1];
-                    const releaseTime = util.getReadableTime(Math.floor(currentTime) + punishTime);
-                    const receiptEmbed = new Discord.MessageEmbed()
-                        .setTitle(violator.nickname || violator.user.username)
-                        .setAuthor("Violation Report")
-                        .setThumbnail(violator.user.displayAvatarURL())
-                        .addField("Username", `${violator.user.username}#${violator.user.discriminator}`, true)
-                        .addField("Sentence", `${args[1]} hours`, true)
-                        .addFields(
-                            {name: "Reasoning", value: reasoning},
-                            {name: "Release Time", value: releaseTime},
-                            {name: "Filed by", value: `${message.author.username}#${message.author.discriminator}`}
-                        )
-                        .setTimestamp();
-                    modLogChannel.send(receiptEmbed);
-                    try {
-                        violator.user.send(receiptEmbed);
-                    } catch {
-                        modLogChannel.send(`Failed to send a copy of Violation Report to ${violator.user.username}#${violator.user.discriminator}. Direct Message might be disabled.`);
-                    }
-                    removeAllMentionObtainableRole(violator);
-                    const addPunishRole = violator.roles.add(getPunishedRole);
-                    if (!addPunishRole) {
-                        message.reply("Failed to add `Punished` to violator.")
-                    }
-                    users.child(violator.user.id).update({
-                        punish: Math.floor(currentTime) + punishTime
-                    })
                 }
                 message.author.lastMessage.delete({timeout: 6000});
             } else {

@@ -29,8 +29,9 @@ const db = firebase.database();
 client.commands = [];
 client.clanList = [];
 client.clanIds = [];
-client.version = "0.1.12";
+client.version = "0.1.13";
 
+// https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 groupAPI.get(`/v1/groups/${GROUP_ID}/relationships/allies?startRowIndex=0&maxRows=500`)
     .then(res => {
         const groups = res.data.relatedGroups;

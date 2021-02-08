@@ -7,6 +7,9 @@ const roles = [
 ];
 
 const clans = {
+    "Wako Tōzoku": "Wako",
+    "Akamatsu | 赤松氏": "Akamatsu",
+    "[The Date Clan]": "Date",
     "Hosokawa | 細川氏": "Hosokawa",
     "Yamana-shi": "Yamana",
     "Shoni  Clan": "Shoni",
