@@ -30,6 +30,13 @@ const getUserGroupsByUserId = async (userId) => {
     }
 }
 
+function formatRank(text) {
+    const blacklistWords = ["The"];
+    var regex  = new RegExp("( |^)" + blacklistWords.join("|") + "( |$)", "g");
+    const filtered = text.replace(/[^a-zA-ZōŌūо-\s]/g, "").replace(regex, "").replace(/^[\s+]/, "");
+    return filtered.split(" ")[0];
+}
+
 const setSocialStatusByGroupRank = async (message, clan) => {
     const rank = clan.role.rank;
     if (rank) {
@@ -83,7 +90,7 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
     function clanSelected(clanChoice) {
         if (clanChoice) {
             const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
-            const clanRank = clanChoice.role.name.replace(/[^a-zA-ZōŌū-\s]/, "").split(" ")[0];
+            const clanRank = formatRank(clanChoice.role.name);
             const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
             message.member.setNickname(nickname.slice(0, 32))
                 .catch (error => {
@@ -201,7 +208,7 @@ module.exports = {
                                         const clan = userClans[0];
                                         if (clan) {
                                             const clanName = clans[clan.group.name] || clan.group.name;
-                                            const clanRank = clan.role.name.replace(/[^a-zA-ZōŌū-\s]/, "").split(" ")[0];
+                                            const clanRank = formatRank(clan.role.name);
                                             const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
                                             users.child(authorId).update({
                                                 primary_clan: {
@@ -268,7 +275,6 @@ module.exports = {
                             createProfile();
                             return;
                         }
-
                         if (data.verify == true) {
                             message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
                             return;
@@ -276,7 +282,6 @@ module.exports = {
                             message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
                             return;
                         }
-
                     } else {
                         // Member has no DATA at all.
                         createProfile();
@@ -347,8 +352,8 @@ module.exports = {
                         message.reply("You aren't allowed to use this command at this time. Try again later.")
                             .then(reply => {
                                 reply.delete({ timeout: 5000 })
-                                    .catch(console.error);
-                            });
+                            })
+                            .catch(console.error);
                         return;
                     }
 
@@ -362,15 +367,15 @@ module.exports = {
                         message.reply("You must be verified to use this command.")
                             .then(reply => {
                                 reply.delete({ timeout: 5000 })
-                                    .catch(console.error);
-                            });
+                            })
+                            .catch(console.error);
                     }
                 } else {
                     message.reply("Please verify before using this command.")
                         .then(reply => {
                             reply.delete({ timeout: 5000 })
-                                .catch(console.error);
-                        });
+                        })
+                        .catch(console.error);
                 }
             });
         }
