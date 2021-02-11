@@ -3,6 +3,8 @@ const { v4: uuidv4 } = require('uuid');
 const { clans } = require("../util/titles");
 const util = require("../util/shared");
 
+const blacklistWords = ["The", "Lord"];
+
 const getUserIdByUsername = async (username) => {
     try {
         const response = await mainAPI.get(`users/get-by-username?username=${username}`);
@@ -31,7 +33,6 @@ const getUserGroupsByUserId = async (userId) => {
 }
 
 function formatRank(text) {
-    const blacklistWords = ["The"];
     var regex  = new RegExp("( |^)" + blacklistWords.join("|") + "( |$)", "g");
     const filtered = text.replace(/[^a-zA-ZōŌūо-\s]/g, "").replace(regex, "").replace(/^[\s+]/, "");
     return filtered.split(" ")[0];
