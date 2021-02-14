@@ -6,9 +6,12 @@ const roles = [
     "Punished"
 ];
 
+// https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 const clans = {
+    "上杉 - Uesugi Clan - 上杉": "Uesugi",
+    "Gokudō | 邪悪": "Gokudō",
     "Wako Tōzoku": "Wako",
-    "Akamatsu | 赤松氏": "Akamatsu",
+    "Akamatsu | 赤松氏争": "Akamatsu",
     "[The Date Clan]": "Date",
     "Hosokawa | 細川氏": "Hosokawa",
     "Yamana-shi": "Yamana",
