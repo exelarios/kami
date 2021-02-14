@@ -1,7 +1,7 @@
 const roles = [
     "Faction Leader",
-    "Clan Official",
-    "Clan Member",
+    "Faction Official",
+    "Faction Member",
     "Commoner",
     "Punished"
 ];

@@ -47,12 +47,12 @@ const setSocialStatusByGroupRank = async (message, clan) => {
                 message.reply("Failed to role you to Faction Leader, please ping a moderator.");
             }
         } else if (rank >= 225 && rank < 255) { // Clan Official
-            const setOfficial = await util.setMemberRoleByName(message, "Clan Official");
+            const setOfficial = await util.setMemberRoleByName(message, "Faction Official");
             if (!setOfficial) {
                 message.reply("Failed to role you to Clan Official, please ping a moderator.");
             }
         } else {
-            const setMember = await util.setMemberRoleByName(message, "Clan Member");
+            const setMember = await util.setMemberRoleByName(message, "Faction Member");
             if (!setMember) {
                 message.reply("Failed to role you to Clan Member, please ping a moderator.");
             }
