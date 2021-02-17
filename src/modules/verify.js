@@ -417,7 +417,7 @@ module.exports = {
                         const targetMember = message.guild.members.cache.get(target.id);
                         const playerRecord = new Discord.MessageEmbed()
                             .setAuthor(`${targetMember.user.username}#${targetMember.user.discriminator}`, targetMember.user.displayAvatarURL())
-                            .setTitle(targetMember.nickname || targetMember.user.username())
+                            .setTitle(targetMember.nickname || targetMember.user.username)
                             .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
 
                         message.reply(playerRecord);
