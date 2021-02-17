@@ -8,6 +8,8 @@ const roles = [
 
 // https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 const clans = {
+    "Ōtomo clan | 大伴氏": "Ōtomo",
+    "Ouchi Clan -": "Ouchi",
     "上杉 - Uesugi Clan - 上杉": "Uesugi",
     "Gokudō | 邪悪": "Gokudō",
     "Wako Tōzoku": "Wako",

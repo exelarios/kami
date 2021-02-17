@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const { mainAPI, userAPI, groupAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
 const { clans } = require("../util/titles");
@@ -381,4 +382,56 @@ module.exports = {
             });
         }
     },
+
+    whois: {
+        usage: "!whois <mention>",
+        description: "displays known information about the mention.",
+        execute: async (client, message, db, args) => {
+
+            if (message.channel.type == "dm") {
+                message.reply("Please retry the command on a channel.");
+                return;
+            }
+
+            if (!message.member.hasPermission("MANAGE_ROLES")) {
+                message.reply("You lack permissions you execute this command.")
+                    .then(reply => {
+                        reply.delete({ timeout: 5000 })
+                            .catch(console.error);
+                    });
+                return;
+            }
+
+            if (!args[0]) {
+                message.reply("Missing arguments or incorrect formatting. Please make sure you include the mention of the member and the duration of the detainment.")
+                return;
+            }
+
+            const target = message.mentions.users.first() || args[0];
+            const users = db.ref("/users");
+            users.child(target.id).once("value", async (snapshot) => {
+                const user = snapshot.val();
+                if (user) {
+                    const rbx_userId = user.userId;
+                    try {
+                        const targetMember = message.guild.members.cache.get(target.id);
+                        const playerRecord = new Discord.MessageEmbed()
+                            .setAuthor(`${targetMember.user.username}#${targetMember.user.discriminator}`, targetMember.user.displayAvatarURL())
+                            .setTitle(targetMember.nickname || targetMember.user.username())
+                            .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
+
+                        message.reply(playerRecord);
+                    } catch(error) {
+                        console.log(error);
+                        message.reply("Oh no, something went wrong. Please contact the great Algorist.");
+                    }
+                } else {
+                    message.reply("The user doesn't that seem to be recorded in our database.")
+                        .then(reply => {
+                            reply.delete({ timeout: 5000 })
+                        })
+                }
+            });
+        }
+    }
 }
