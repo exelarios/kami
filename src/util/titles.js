@@ -8,6 +8,7 @@ const roles = [
 
 // https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 const clans = {
+    "The Chosokabe": "Chōsokabe",
     "Ōtomo clan | 大伴氏": "Ōtomo",
     "Ouchi Clan -": "Ouchi",
     "上杉 - Uesugi Clan - 上杉": "Uesugi",
@@ -31,7 +32,6 @@ const clans = {
     "Ishiyama Hongan-ji Temple": "Ishiyama",
     "Thogoku Clan": "Thogoku",
     "Iezusu-kai": "Iezusu",
-    "Daiju-ji": "Daiji",
     "Toyotomi Clan | 豊臣氏": "Toyotomi",
     "Date | 日付": "Date",
     "Nakamura's Gang 中村": "Nakamura",
