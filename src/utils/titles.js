@@ -8,6 +8,7 @@ const roles = [
 
 // https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 const clans = {
+    "- Sanada -": "Sanada",
     "The Chosokabe": "Chōsokabe",
     "Ōtomo clan | 大伴氏": "Ōtomo",
     "Ouchi Clan -": "Ouchi",

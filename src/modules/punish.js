@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
-const { roles } = require("../util/titles");
-const util = require("../util/shared");
+const { roles } = require("../utils/titles");
+const util = require("../utils/shared");
 
 function combineArrayAtIndex(args, starting) {
     let result = "";
