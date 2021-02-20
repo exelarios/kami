@@ -44,9 +44,10 @@ module.exports = {
                 message.reply("Missing arguments or incorrect formatting. Please make sure you include the mention of the member and the duration of the detainment.")
                 return;
             }
+            
 
             const reasoning = combineArrayAtIndex(args, 2);
-            const target = message.mentions.users.first() || args[0];
+            const target = isBot ? args[0] : message.mentions.users.first();
             if (target) {
                 const violator = message.guild.members.cache.get(target.id);
                 if (violator) {
