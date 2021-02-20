@@ -4,12 +4,12 @@ const SERVER_ID = 755140348753215488;
 const TEST_ID = 803455843143385098;
 
 const Discord = require("discord.js");
-const { groupAPI } = require("./util/axios");
+const { groupAPI } = require("./utils/axios");
 const fs = require("fs");
 const firebase = require("firebase-admin");
-const blacklist = require("./util/blacklist");
+const blacklist = require("./utils/blacklist");
 const punish = require("./modules/punish").punish;
-const util = require("./util/shared");
+const util = require("./utils/shared");
 require('dotenv').config();
 
 const INTERVAL = process.env.INTERVAL;
@@ -29,7 +29,7 @@ const db = firebase.database();
 client.commands = [];
 client.clanList = [];
 client.clanIds = [];
-client.version = "0.1.18";
+client.version = "0.1.19";
 
 // https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 groupAPI.get(`/v1/groups/${GROUP_ID}/relationships/allies?startRowIndex=0&maxRows=500`)

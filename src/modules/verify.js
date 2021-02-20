@@ -1,8 +1,8 @@
 const Discord = require("discord.js");
-const { mainAPI, userAPI, groupAPI } = require("../util/axios");
+const { mainAPI, userAPI, groupAPI } = require("../utils/axios");
 const { v4: uuidv4 } = require('uuid');
-const { clans } = require("../util/titles");
-const util = require("../util/shared");
+const { clans } = require("../utils/titles");
+const util = require("../utils/shared");
 
 const blacklistWords = ["The", "Lord"];
 

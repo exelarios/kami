@@ -1,4 +1,4 @@
-const { roles } = require("../util/titles");
+const { roles } = require("./titles");
 
 const removeMemberRoleByName = async (message, roleName) => {
     const clanMemberRole = await message.guild.roles.cache.find(role => role.name == roleName);

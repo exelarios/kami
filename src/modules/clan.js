@@ -1,4 +1,4 @@
-const { clans, roles } = require("../util/titles");
+const { clans, roles } = require("../utils/titles");
 const Discord = require('discord.js');
 
 const clanEmbed = (clan) => {
