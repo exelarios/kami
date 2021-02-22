@@ -319,8 +319,8 @@ module.exports = {
             })
         }
     },
-    
-    reverify: {
+
+    {
         usage: "!reverify <username>",
         description: "Change your Roblox verification acccount, this will require you to restart the whole process.",
         execute: async (client, message, db, args) => {
@@ -350,7 +350,7 @@ module.exports = {
         }
     },
 
-    update: {
+    {
         usage: "!update",
         description: "To update your social status, clan rank and nickname.",
         execute: async (client, message, db) => {
@@ -399,7 +399,7 @@ module.exports = {
         }
     },
 
-    whois: {
+    {
         usage: "!whois <mention>",
         description: "displays known information about the mention.",
         execute: async (client, message, db, args) => {
@@ -450,4 +450,13 @@ module.exports = {
             });
         }
     }
+]
+
+const actions = {
+    
+}
+
+module.exports = {
+    commands,
+    actions
 }

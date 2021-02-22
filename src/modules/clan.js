@@ -13,9 +13,8 @@ const clanEmbed = (clan) => {
     return embed;
 }
 
-module.exports = {
-
-    claninfo: {
+const commands = [
+    {
         usage: "!claninfo <groupId/groupName>",
         description: "View the latest metadata about a specific clan.",
         execute: (client, message, db, args) => {
@@ -35,7 +34,7 @@ module.exports = {
         }
     },
     
-    clanlist: {
+    {
         usage: "!clanlist",
         description: "Displays all the current clans enrolled in the community.",
         execute: (client, message, db, args) => {
@@ -47,4 +46,13 @@ module.exports = {
             message.channel.send(result);
         }
     }
+]
+
+const actions = [
+
+]
+
+module.exports = {
+    commands,
+    actions
 }

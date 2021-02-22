@@ -19,11 +19,11 @@ function removeAllMentionObtainableRole(member) {
     });
 }
 
-module.exports = {
-
-    punish: {
+const commands = [
+    {
         usage: "!punish <user> <hours> <reasoning>",
         description: "Punish a member within the community for violating our terms of conditions.",
+        access: ["MANAGE_ROlES"],
         execute: async (client, message, db, args, isBot) => {
 
             if (message.channel.type == "dm") {
@@ -96,7 +96,7 @@ module.exports = {
         }
     },
 
-    unpunish: {
+    {
         usage: "!unpunish <user> <reasoning>",
         description: "Unpunish a member within the community for violating our terms of conditions.",
         execute: async (client, message, db, args, isBot) => {
@@ -165,6 +165,53 @@ module.exports = {
                 message.reply("Failed to release mentioned member");
             }
         }
-
     }
+]
+
+const actions = {
+    releaseOffenders: async (client, db) => {
+        console.log("hi");
+        const server = client.guilds.cache.find(guild => guild.id == client.SERVER_ID || guild.id == client.TEST_ID);
+        if (server) {
+            const users = db.ref("/users");
+            const punishRole = server.roles.cache.find(role => role.name == "Punished");
+            if (punishRole) {
+                const modLogChannel = server.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
+                setInterval(function() {
+                    punishRole.members.map(member => {
+                        const memberId = member.user.id;
+                        users.child(memberId).once("value", async snapshot => {
+                            let data = snapshot.val();
+                            if (!data) return;
+                            const currentTime = new Date().getTime() / 1000;
+                            if (data.punish <= Math.floor(currentTime)) {
+                                const releaseReport = new Discord.MessageEmbed()
+                                    .setAuthor("Release Report")
+                                    .setThumbnail(member.user.displayAvatarURL())
+                                    .setDescription(`${member.nickname || member.user.username}(${member.user.username}#${member.user.discriminator}) has been released from punished at ${util.getReadableTime(currentTime)}.`)
+                                modLogChannel.send(releaseReport);
+                                try {
+                                    member.user.send(releaseReport);
+                                } catch(error) {
+                                    console.error(error);
+                                }
+                                member.roles.remove(punishRole);
+                                users.child(memberId).update({
+                                    punish: null,
+                                });
+                            }
+                        });
+                    });
+                }, process.env.INTERVAL);
+            }
+        }
+    },
+    sendMemes: async () => {
+        console.log("memes");
+    }
+}
+
+module.exports = {
+    commands,
+    actions
 }
