@@ -8,6 +8,8 @@ const roles = [
 
 // https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
 const clans = {
+    "Satake Clan 佐竹氏": "Satake",
+    "₪Toyotomi Clan 豊臣氏₪": "Toyotomi",
     "Satōmi Clan-里見氏": "Satōmi",
     "- Sanada -": "Sanada",
     "The Chosokabe": "Chōsokabe",
