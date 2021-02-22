@@ -237,7 +237,7 @@ module.exports = {
                                 const errorMessage = new Discord.MessageEmbed()
                                     .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                                     .setTitle("You are already verified.")
-                                    .addField("Want to change the verify account?", "Try `!reverify <uername>` without inequality signs.")
+                                    .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                                     .addField("Need help?", "Ping an active moderator.");
                                 message.reply(errorMessage);
                             } else {
