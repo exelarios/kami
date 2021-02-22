@@ -12,6 +12,7 @@ const getUserIdByUsername = async (username) => {
         return response.data.Id;
     } catch(error) {
         console.log("FAILED: GET_USER_ID_BY_USERNAME");
+        console.log(error);
     }
 }
 
@@ -21,6 +22,7 @@ const getUserStatsByUserId = async (userId) => {
         return response.data.status.replace(/\s+/g, '');
     } catch(error) {
         console.log("FAILED: GET_USER_STATS_BY_USER_ID");
+        console.log(error);
     }
 }
 
@@ -30,6 +32,7 @@ const getUserGroupsByUserId = async (userId) => {
         return response.data.data; // Some idiot decided to name the array of objects "data".
     } catch(error) {
         console.log("FAILED: GET_USER_GROUP_BY_USER_ID");
+        console.log(error);
     }
 }
 
@@ -52,7 +55,7 @@ const setSocialStatusByGroupRank = async (message, clan) => {
             if (!setOfficial) {
                 message.reply("Failed to role you to Clan Official, please ping a moderator.");
             }
-        } else {
+        } else { // Clan Member
             const setMember = await util.setMemberRoleByName(message, "Faction Member");
             if (!setMember) {
                 message.reply("Failed to role you to Clan Member, please ping a moderator.");
@@ -79,7 +82,7 @@ const setMemberAsCommomer = async (message, users, username) => {
     });
 }
 
-const requestPrimaryClan = async (message, userStore, userClans, username) => {
+async function requestPrimaryClan(message, userStore, userClans, username) {
     const numOfClans = userClans.length;
     const numberToEmoji = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
 
@@ -111,7 +114,7 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
             util.removeAllObtainableRole(message);
             setSocialStatusByGroupRank(message, clanChoice);
         } else {
-            message.reply("Please input an vaild number corresponding to the clan name. You may retry by typing `!verify`");
+            message.reply("Please input an vaild number corresponding to the clan name. Please try again.");
         }
     }
 
@@ -139,7 +142,7 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
                 const clanChoice = userClans[choice];
                 clanSelected(clanChoice);
             } catch(error) {
-                message.reply("Await Reaction Timeout. You may retry by typing `!verify`")
+                message.reply("Await Reaction Timeout. Please try again.")
             }
             listing.delete();
             headingChoice.delete();
@@ -154,8 +157,45 @@ const requestPrimaryClan = async (message, userStore, userClans, username) => {
                 clanSelected(clanChoice);
             }
         } catch(error) {
-            message.reply("Await Response Timeout. You may retry by typing `!verify`")
+            message.reply("Await Response Timeout. Please try again.");
         }
+    }
+}
+
+async function createProfile(message, users, username) {
+    const authorId = message.author.id;
+    const userCode = uuidv4();
+    const rbx_userId = await getUserIdByUsername(username);
+    if (!rbx_userId) {
+        const errorMessage = new Discord.MessageEmbed()
+            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+            .setTitle("Please enter a valid roblox username.")
+            .addField("Need help?", "Ping an active moderator.");
+        message.reply(errorMessage);
+        return;
+    }
+    users.child(authorId).update({
+        verify: false,
+        rbx_username: username,
+        verify_key: userCode,
+        userId: rbx_userId,
+        primary_clan: null
+    });
+    const sendKey = new Discord.MessageEmbed()
+        .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+        .setTitle("Please add the provided key into your Roblox user status.\nClick here to direct to your profile.")
+        .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
+        .setDescription(`\`${userCode}\``)
+        .setImage("https://i.imgur.com/skTPbMk.png");
+    try {
+        const responseMessage = new Discord.MessageEmbed()
+            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+            .setTitle("Your verification key has been sent!")
+            .setDescription("If you didn't receive anything please ping an active moderator.");
+        message.author.send(sendKey);
+        message.reply(responseMessage);
+    } catch(error) {
+        message.reply(sendKey);
     }
 }
 
@@ -176,14 +216,13 @@ module.exports = {
             users.child(authorId).once("value", async (snapshot) => {
                 if (args[0] == undefined) {
                     if (!snapshot.val()) {
-                        message.reply(
-                            "You aren't recorded in our database," +
-                            "provide your Roblox's username as the second argument: `!verify <username>`\n" +
-                            "Once you have verfied type `!verify` once again without any arguments."
-                        ).then(reply => {
-                            reply.delete({ timeout: 5000 })
-                                .catch(console.error);
-                        });
+                        const errorMessage = new Discord.MessageEmbed()
+                            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                            .setTitle("You must first provide us your username.")
+                            .setDescription("Try `!verify <username>` without the inequality signs.")
+                            .addField("Want to change the verify account?", "Try `!reverify <ROBLOX_USERNAME>` without inequality signs.")
+                            .addField("Need help?", "Ping an active moderator.");
+                        message.reply(errorMessage);
                     } else {
                         const currentTime = new Date().getTime() / 1000
                         if (snapshot.val().punish > Math.floor(currentTime)) {
@@ -193,8 +232,12 @@ module.exports = {
 
                         if (snapshot.val().verify != undefined) {
                             if (snapshot.val().verify == true) {
-                                message.reply("You are already verified, if you want to change accounts,"
-                                + "you may use `!reverify <username>`. If you think this is a mistake please ping a moderator.");
+                                const errorMessage = new Discord.MessageEmbed()
+                                    .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                                    .setTitle("You are already verified.")
+                                    .addField("Want to change the verify account?", "Try `!reverify <ROBLOX_USERNAME>` without inequality signs.")
+                                    .addField("Need help?", "Ping an active moderator.");
+                                message.reply(errorMessage);
                             } else {
                                 const userId = snapshot.val().userId;
                                 const username = snapshot.val().rbx_username;
@@ -246,27 +289,9 @@ module.exports = {
                             message.reply("You must invoke `!verify <username>` before you can use this command");
                         }
                     }
-                    message && message.author.lastMessage.delete({timeout: 6000}); // check if the message still exist before deleting it.
+                    // message && message.author.lastMessage.delete({timeout: 6000}); // check if the message still exist before deleting it.
                 } else {
                     // When user invokes !Verify <username>
-                    async function createProfile() {
-                        const userCode = uuidv4();
-                        const rbx_userId = await getUserIdByUsername(args[0]);
-                        users.child(authorId).update({
-                            verify: false,
-                            rbx_username: args[0],
-                            verify_key: userCode,
-                            userId: rbx_userId,
-                            primary_clan: null
-                        })
-                        try {
-                            message.author.send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
-                            message.reply("Your verification key has been sent to you. If you didn't receive anything please ping a moderator.");
-                        } catch(error) {
-                            message.reply(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
-                        }
-                    }
-
                     const data = snapshot.val();
                     if (data) { // Member may have a profile created.
                         const currentTime = new Date().getTime() / 1000;
@@ -274,7 +299,7 @@ module.exports = {
                             message.reply("You aren't allowed to use this command at this time. Try again later.");
                             return;
                         } else if (data.verify == undefined) {
-                            createProfile();
+                            createProfile(message, users, args[0]);
                             return;
                         }
                         if (data.verify == true) {
@@ -286,7 +311,7 @@ module.exports = {
                         }
                     } else {
                         // Member has no DATA at all.
-                        createProfile();
+                        createProfile(message, users, args[0]);
                     }
                 }
             })
@@ -308,24 +333,13 @@ module.exports = {
                 const authorId = message.author.id;
                 users.child(authorId).once("value", async (snapshot) => {
                     if (snapshot.val()) {
-                        const currentTime = new Date().getTime() / 1000
+                        const currentTime = new Date().getTime() / 1000;
                         if (snapshot.val().punish > Math.floor(currentTime)) {
                             message.reply("You aren't allowed to use this command at this time. Try again later.");
                             return;
                         }
-                        const authorId = message.author.id;
-                        const userCode = uuidv4();
-                        const rbx_userId = await getUserIdByUsername(args[0]);
-                        users.child(authorId).update({
-                            verify: false,
-                            rbx_username: args[0],
-                            verify_key: userCode,
-                            userId: rbx_userId,
-                            primary_clan: null,
-                        })
                         util.removeAllObtainableRole(message);
-                        message.reply("Your verification key has been sent to you. If you didn't receive anything please contact a moderator.");
-                        client.users.cache.get(authorId).send(`In order to verify you're actually ${args[0]}. Please add \`${userCode}\` onto your update status via Roblox.\nOnce you have done so\, type \`!verify\``);
+                        createProfile(message, users, args[0]);
                     }
                 });
             } else {
