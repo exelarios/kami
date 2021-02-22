@@ -185,7 +185,8 @@ async function createProfile(message, users, username) {
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
         .setTitle("Please add the provided key into your Roblox user status.\nClick here to direct to your profile.")
         .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
-        .setDescription(`\`${userCode}\``)
+        .addField("Verification Key", `\`${userCode}\``)
+        .addField("What's next?", "Go back to `join-verification` and type `!verify`")
         .setImage("https://i.imgur.com/skTPbMk.png");
     try {
         const responseMessage = new Discord.MessageEmbed()
