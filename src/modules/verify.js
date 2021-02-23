@@ -12,7 +12,6 @@ const getUserIdByUsername = async (username) => {
         return response.data.Id;
     } catch(error) {
         console.log("FAILED: GET_USER_ID_BY_USERNAME");
-        console.log(error);
     }
 }
 
@@ -22,7 +21,6 @@ const getUserStatsByUserId = async (userId) => {
         return response.data.status.replace(/\s+/g, '');
     } catch(error) {
         console.log("FAILED: GET_USER_STATS_BY_USER_ID");
-        console.log(error);
     }
 }
 
@@ -32,7 +30,6 @@ const getUserGroupsByUserId = async (userId) => {
         return response.data.data; // Some idiot decided to name the array of objects "data".
     } catch(error) {
         console.log("FAILED: GET_USER_GROUP_BY_USER_ID");
-        console.log(error);
     }
 }
 
@@ -222,7 +219,7 @@ module.exports = {
                             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                             .setTitle("You must first provide us your username.")
                             .setDescription("Try `!verify <username>` without the inequality signs.")
-                            .addField("Want to change the verify account?", "Try `!reverify <ROBLOX_USERNAME>` without inequality signs.")
+                            .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                             .addField("Need help?", "Ping an active moderator.");
                         message.reply(errorMessage);
                     } else {
@@ -237,7 +234,7 @@ module.exports = {
                                 const errorMessage = new Discord.MessageEmbed()
                                     .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                                     .setTitle("You are already verified.")
-                                    .addField("Want to change the verify account?", "Try `!reverify <ROBLOX_USERNAME>` without inequality signs.")
+                                    .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                                     .addField("Need help?", "Ping an active moderator.");
                                 message.reply(errorMessage);
                             } else {
