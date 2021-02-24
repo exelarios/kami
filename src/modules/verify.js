@@ -1,8 +1,8 @@
 const Discord = require("discord.js");
-const { mainAPI, userAPI, groupAPI } = require("../utils/axios");
+const { mainAPI, userAPI, groupAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
-const { clans } = require("../utils/titles");
-const util = require("../utils/shared");
+const { clans } = require("../util/titles");
+const util = require("../util/shared");
 
 const blacklistWords = ["The", "Lord"];
 
@@ -12,7 +12,6 @@ const getUserIdByUsername = async (username) => {
         return response.data.Id;
     } catch(error) {
         console.log("FAILED: GET_USER_ID_BY_USERNAME");
-        console.log(error);
     }
 }
 
@@ -22,7 +21,6 @@ const getUserStatsByUserId = async (userId) => {
         return response.data.status.replace(/\s+/g, '');
     } catch(error) {
         console.log("FAILED: GET_USER_STATS_BY_USER_ID");
-        console.log(error);
     }
 }
 
@@ -32,7 +30,6 @@ const getUserGroupsByUserId = async (userId) => {
         return response.data.data; // Some idiot decided to name the array of objects "data".
     } catch(error) {
         console.log("FAILED: GET_USER_GROUP_BY_USER_ID");
-        console.log(error);
     }
 }
 
@@ -174,21 +171,21 @@ async function createProfile(message, users, username) {
         message.reply(errorMessage);
         return;
     }
-    users.child(authorId).update({
+    await users.doc(authorId).set({
         verify: false,
         rbx_username: username,
         verify_key: userCode,
         userId: rbx_userId,
         primary_clan: null
-    });
+    })
     const sendKey = new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-        .setTitle(`${username}'s Profile`)
-        .setDescription("Please add the provided key into your Roblox user status.")
-        .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
+        .setTitle(`Go to Feed.`)
+        .setDescription("Please post the provided key onto your feed; click on \"Go to Feed\" to be directed to the page.")
+        .setURL(`https://www.roblox.com/feeds/`)
         .addField("Verification Key", `\`${userCode}\``)
         .addField("What's next?", "Go back to `join-verification` and type `!verify`")
-        .setImage("https://i.imgur.com/skTPbMk.png");
+        .setImage("https://i.imgur.com/sAl9tu2.png");
     try {
         const responseMessage = new Discord.MessageEmbed()
             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
@@ -201,13 +198,13 @@ async function createProfile(message, users, username) {
     }
 }
 
-module.exports = {
-    verify: {
+const commands = [
+    {
         usage: "!verify <username>",
         description: "To verify new users to the community.",
         execute: async (client, message, db, args) => {
 
-            const users = db.ref("/users");
+            const users = db.collection("users");
             const authorId = message.author.id;
 
             if (message.channel.type == "dm") {
@@ -215,111 +212,105 @@ module.exports = {
                 return;
             }
 
-            users.child(authorId).once("value", async (snapshot) => {
-                if (args[0] == undefined) {
-                    if (!snapshot.val()) {
-                        const errorMessage = new Discord.MessageEmbed()
-                            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-                            .setTitle("You must first provide us your username.")
-                            .setDescription("Try `!verify <username>` without the inequality signs.")
-                            .addField("Want to change the verify account?", "Try `!reverify <ROBLOX_USERNAME>` without inequality signs.")
-                            .addField("Need help?", "Ping an active moderator.");
-                        message.reply(errorMessage);
-                    } else {
-                        const currentTime = new Date().getTime() / 1000
-                        if (snapshot.val().punish > Math.floor(currentTime)) {
-                            message.reply("You aren't allowed to use this command at this time. Try again later.");
-                            return;
-                        }
-
-                        if (snapshot.val().verify != undefined) {
-                            if (snapshot.val().verify == true) {
-                                const errorMessage = new Discord.MessageEmbed()
-                                    .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-                                    .setTitle("You are already verified.")
-                                    .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
-                                    .addField("Need help?", "Ping an active moderator.");
-                                message.reply(errorMessage);
-                            } else {
-                                const userId = snapshot.val().userId;
-                                const username = snapshot.val().rbx_username;
-                                const userStatus = await getUserStatsByUserId(userId);
-                                if (userStatus == snapshot.val().verify_key) {
-                                    // User has been verified.
-                                    const userGroups = await getUserGroupsByUserId(userId);
-                                    if (!userGroups) {
-                                        console.error("Couldn't get user's groups");
-                                    }
-                                    const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
-                                    if (userClans.length <= 1) { // If user has one or less than one group.
-                                        const clan = userClans[0];
-                                        if (clan) {
-                                            const clanName = clans[clan.group.name] || clan.group.name;
-                                            const clanRank = formatRank(clan.role.name);
-                                            const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
-                                            users.child(authorId).update({
-                                                primary_clan: {
-                                                    Name: clanName,
-                                                    Id: clan.group.id,
-                                                    Rank: clan.role.rank,
-                                                    Role: clan.role.name,
-                                                },
-                                                verify: true
-                                            });
-                                            util.removeAllObtainableRole(message);
-                                            message.member.setNickname(nickname.slice(0, 32))
-                                                .catch (error => {
-                                                    message.reply("Couldn't set Nickname, might be lacking permissions");
-                                                })
-                                            setSocialStatusByGroupRank(message, clan);
-                                        } else {
-                                            // if user isn't a member of any clan.
-                                            setMemberAsCommomer(message, users, username);
-                                        }
+            const user = users.doc(authorId);
+            const doc = await user.get();
+            if (args[0] == undefined) {
+                if (!doc.exists) {
+                    const errorMessage = new Discord.MessageEmbed()
+                        .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                        .setTitle("You must first provide us your username.")
+                        .setDescription("Try `!verify <username>` without the inequality signs.")
+                        .addField("Want to change the verify account?", "Try `!reverify <ROBLOX_USERNAME>` without inequality signs.")
+                        .addField("Need help?", "Ping an active moderator.");
+                    message.reply(errorMessage);
+                } else {
+                    const currentTime = new Date().getTime() / 1000
+                    if (doc.data().punish > Math.floor(currentTime)) {
+                        message.reply("You aren't allowed to use this command at this time. Try again later.");
+                        return;
+                    }
+                    if (doc.data().verify != undefined) {
+                        if (doc.data().verify == true) {
+                            const errorMessage = new Discord.MessageEmbed()
+                                .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                                .setTitle("You are already verified.")
+                                .addField("Want to get your roles back?", "Try `!update`.")
+                                .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
+                                .addField("Need help?", "Ping an active moderator.");
+                            message.reply(errorMessage);
+                        } else {
+                            const userId = doc.data().userId;
+                            const username = doc.data().rbx_username;
+                            const userStatus = await getUserStatsByUserId(userId);
+                            if (userStatus == doc.data().verify_key) {
+                                // User has been verified.
+                                const userGroups = await getUserGroupsByUserId(userId);
+                                if (!userGroups) {
+                                    console.error("Couldn't get user's groups");
+                                }
+                                const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
+                                if (userClans.length <= 1) { // If user has one or less than one group.
+                                    const clan = userClans[0];
+                                    if (clan) {
+                                        const clanName = clans[clan.group.name] || clan.group.name;
+                                        const clanRank = formatRank(clan.role.name);
+                                        const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
+                                        await users.doc(authorId).update({
+                                            primary_clan: clan.group.id,
+                                            verify: true
+                                        })
+                                        util.removeAllObtainableRole(message);
+                                        message.member.setNickname(nickname.slice(0, 32))
+                                            .catch (error => {
+                                                message.reply("Couldn't set Nickname, might be lacking permissions");
+                                            })
+                                        setSocialStatusByGroupRank(message, clan);
                                     } else {
-                                        requestPrimaryClan(message, users, userClans, username);
+                                        // if user isn't a member of any clan.
+                                        setMemberAsCommomer(message, users, username);
                                     }
                                 } else {
-                                    message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`)
-                                        .then(reply => {
-                                        reply.delete({ timeout: 5000 })
-                                            .catch(console.error);
-                                    });
+                                    requestPrimaryClan(message, users, userClans, username);
                                 }
+                            } else {
+                                message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`)
+                                    .then(reply => {
+                                    reply.delete({ timeout: 5000 })
+                                        .catch(console.error);
+                                });
                             }
-                        } else {
-                            message.reply("You must invoke `!verify <username>` before you can use this command");
-                        }
-                    }
-                    // message && message.author.lastMessage.delete({timeout: 6000}); // check if the message still exist before deleting it.
-                } else {
-                    // When user invokes !Verify <username>
-                    const data = snapshot.val();
-                    if (data) { // Member may have a profile created.
-                        const currentTime = new Date().getTime() / 1000;
-                        if (snapshot.val().punish > Math.floor(currentTime)) {
-                            message.reply("You aren't allowed to use this command at this time. Try again later.");
-                            return;
-                        } else if (data.verify == undefined) {
-                            createProfile(message, users, args[0]);
-                            return;
-                        }
-                        if (data.verify == true) {
-                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
-                            return;
-                        } else {
-                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
-                            return;
                         }
                     } else {
-                        // Member has no DATA at all.
-                        createProfile(message, users, args[0]);
+                        message.reply("You must invoke `!verify <username>` before you can use this command");
                     }
                 }
-            })
+                // message && message.author.lastMessage.delete({timeout: 6000}); // check if the message still exist before deleting it.
+            } else {
+                // When user invokes !Verify <username>
+                const data = doc.data();
+                if (data) { // Member may have a profile created.
+                    const currentTime = new Date().getTime() / 1000;
+                    if (data.punish > Math.floor(currentTime)) {
+                        message.reply("You aren't allowed to use this command at this time. Try again later.");
+                        return;
+                    } else if (data.verify == undefined) {
+                        createProfile(message, users, args[0]);
+                        return;
+                    }
+                    if (data.verify == true) {
+                        message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
+                        return;
+                    } else {
+                        message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
+                        return;
+                    }
+                } else {
+                    // Member has no DATA at all.
+                    createProfile(message, users, args[0]);
+                }
+            }
         }
     },
-
     {
         usage: "!reverify <username>",
         description: "Change your Roblox verification acccount, this will require you to restart the whole process.",
@@ -435,7 +426,6 @@ module.exports = {
                             .setAuthor(`${targetMember.user.username}#${targetMember.user.discriminator}`, targetMember.user.displayAvatarURL())
                             .setTitle(targetMember.nickname || targetMember.user.username)
                             .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
-
                         message.reply(playerRecord);
                     } catch(error) {
                         console.log(error);
