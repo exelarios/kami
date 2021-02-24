@@ -180,12 +180,12 @@ async function createProfile(message, users, username) {
     });
     const sendKey = new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-        .setTitle(`${username}'s Profile`)
-        .setDescription("Please add the provided key into your Roblox user status.")
-        .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
+        .setTitle(`Go to Feed.`)
+        .setDescription("Please post the provided key onto your feed; click on \"Go to Feed\" to be directed to the page.")
+        .setURL(`https://www.roblox.com/feeds/`)
         .addField("Verification Key", `\`${userCode}\``)
         .addField("What's next?", "Go back to `join-verification` and type `!verify`")
-        .setImage("https://i.imgur.com/skTPbMk.png");
+        .setImage("https://i.imgur.com/sAl9tu2.png");
     try {
         const responseMessage = new Discord.MessageEmbed()
             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
@@ -234,6 +234,7 @@ module.exports = {
                                 const errorMessage = new Discord.MessageEmbed()
                                     .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                                     .setTitle("You are already verified.")
+                                    .addField("Get your roles back?", "Try `!update`.")
                                     .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                                     .addField("Need help?", "Ping an active moderator.");
                                 message.reply(errorMessage);
