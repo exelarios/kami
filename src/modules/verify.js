@@ -1,10 +1,9 @@
 const Discord = require("discord.js");
 const { mainAPI, userAPI, groupAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
-const { clans } = require("../util/titles");
-const util = require("../util/shared");
-
-const blacklistWords = ["The", "Lord"];
+const util = require("../utils/shared");
+const { overwriteClan } = require("../utils/titles");
+const formatName = require("../utils/formatName");
 
 const getUserIdByUsername = async (username) => {
     try {
@@ -31,12 +30,6 @@ const getUserGroupsByUserId = async (userId) => {
     } catch(error) {
         console.log("FAILED: GET_USER_GROUP_BY_USER_ID");
     }
-}
-
-function formatRank(text) {
-    var regex  = new RegExp("( |^)" + blacklistWords.join("|") + "( |$)", "g");
-    const filtered = text.replace(/[^a-zA-ZōŌūо-\s]/g, "").replace(regex, "").replace(/^[\s+]/, "");
-    return filtered.split(" ")[0];
 }
 
 const setSocialStatusByGroupRank = async (message, clan) => {
@@ -91,8 +84,8 @@ async function requestPrimaryClan(message, userStore, userClans, username) {
 
     function clanSelected(clanChoice) {
         if (clanChoice) {
-            const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
-            const clanRank = formatRank(clanChoice.role.name);
+            const clanName = overwriteClan[formatName(clanChoice.group.name)] || formatName(clanChoice.group.name);
+            const clanRank = formatName(clanChoice.role.name);
             const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
             message.member.setNickname(nickname.slice(0, 32))
                 .catch (error => {
@@ -118,7 +111,7 @@ async function requestPrimaryClan(message, userStore, userClans, username) {
     let headingChoice = await message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
     const clanListing = userClans.map((clan, index) => {
         let output = "";
-        output += "[" + (index + 1) + "] "+ (clans[clan.group.name] || clan.group.name);
+        output += "[" + (index + 1) + "] "+ (overwriteClan[formatName(clan.group.name)] || formatName(clan.group.name));
         return output;
     })
 
@@ -177,7 +170,7 @@ async function createProfile(message, users, username) {
         verify_key: userCode,
         userId: rbx_userId,
         primary_clan: null
-    })
+    });
     const sendKey = new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
         .setTitle(`Go to Feed.`)
@@ -297,7 +290,13 @@ const commands = [
                         return;
                     }
                     if (data.verify == true) {
-                        message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
+                        const errorMessage = new Discord.MessageEmbed()
+                            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                            .setTitle(`There's still a pending verifciation under ${snapshot.val().rbx_username}.`)
+                            .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                            .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
+                            .addField("Need help?", "Ping an active moderator.");
+                        message.reply(errorMessage);
                         return;
                     } else {
                         message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
