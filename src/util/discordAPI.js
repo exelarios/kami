@@ -1,3 +1,4 @@
+const { roles } = require("../util/titles");
 
 function removeAllMemberObtainableRole(member) {
     roles.map((role) => {

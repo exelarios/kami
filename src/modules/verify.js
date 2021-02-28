@@ -1,9 +1,9 @@
 const Discord = require("discord.js");
 const { mainAPI, userAPI, groupAPI } = require("../util/axios");
 const { v4: uuidv4 } = require('uuid');
-const util = require("../utils/shared");
-const { overwriteClan } = require("../utils/titles");
-const formatName = require("../utils/formatName");
+const util = require("../util/shared");
+const { overwriteClan } = require("../util/titles");
+const formatName = require("../util/formatName");
 
 const getUserIdByUsername = async (username) => {
     try {
@@ -65,20 +65,20 @@ const setMemberAsCommomer = async (message, users, username) => {
     if (!setCommomer) {
         message.reply("Failed to role you to Commoner, please ping a moderator.");
     }
-    users.child(authorId).update({
+    users.doc(authorId).update({
         primary_clan: null,
         verify: true,
         punish: null,
     });
 }
 
-async function requestPrimaryClan(message, userStore, userClans, username) {
+async function requestPrimaryClan(message, users, userClans, username) {
     const numOfClans = userClans.length;
     const numberToEmoji = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
 
     if (numOfClans < 1) {
         util.removeAllObtainableRole(message);
-        setMemberAsCommomer(message, userStore, username);
+        setMemberAsCommomer(message, users, username);
         return;
     }
 
@@ -91,15 +91,10 @@ async function requestPrimaryClan(message, userStore, userClans, username) {
                 .catch (error => {
                     message.reply("Couldn't set Nickname, might be lacking permissions");
                 })
-            userStore.child(message.author.id).update({
+            users.doc(message.author.id).update({
                 verify: true,
                 punish: null,
-                primary_clan: {
-                    Name: clanName,
-                    Id: clanChoice.group.id,
-                    Rank: clanChoice.role.rank,
-                    Role: clanChoice.role.name,
-                }
+                primary_clan: clanChoice.group.id
             });
             util.removeAllObtainableRole(message);
             setSocialStatusByGroupRank(message, clanChoice);
@@ -173,9 +168,8 @@ async function createProfile(message, users, username) {
     });
     const sendKey = new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-        .setTitle(`Go to Feed.`)
-        .setDescription("Please post the provided key onto your feed; click on \"Go to Feed\" to be directed to the page.")
-        .setURL(`https://www.roblox.com/feeds/`)
+        .setTitle(`Please post the provided key onto your feed.`)
+        .setDescription("https://roblox.com/feeds")
         .addField("Verification Key", `\`${userCode}\``)
         .addField("What's next?", "Go back to `join-verification` and type `!verify`")
         .setImage("https://i.imgur.com/sAl9tu2.png");
@@ -232,9 +226,9 @@ const commands = [
                             message.reply(errorMessage);
                         } else {
                             const userId = snapshot.userId;
-                            const username = doc.data().rbx_username;
+                            const username = snapshot.rbx_username;
                             const userStatus = await getUserStatsByUserId(userId);
-                            if (userStatus == doc.data().verify_key) {
+                            if (userStatus == snapshot.verify_key) {
                                 // User has been verified.
                                 const userGroups = await getUserGroupsByUserId(userId);
                                 if (!userGroups) {
@@ -265,11 +259,13 @@ const commands = [
                                     requestPrimaryClan(message, users, userClans, username);
                                 }
                             } else {
-                                message.reply(`${snapshot.val().rbx_username}'s status doesn't match the provided key. Please add the code provided to you and set it as your Roblox's user status.`)
-                                    .then(reply => {
-                                    reply.delete({ timeout: 5000 })
-                                        .catch(console.error);
-                                });
+                                const errorMessage = new Discord.MessageEmbed()
+                                    .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                                    .setTitle(`${snapshot.rbx_username}'s status doesn't match the provided key.`)
+                                    .addField("Still want to verify on that account?", "Update your status as the key, then do `!verify`.\nhttps://roblox.com/feeds")
+                                    .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
+                                    .addField("Need help?", "Ping an active moderator.");
+                                message.reply(errorMessage);
                             }
                         }
                     } else {
@@ -279,27 +275,33 @@ const commands = [
                 // message && message.author.lastMessage.delete({timeout: 6000}); // check if the message still exist before deleting it.
             } else {
                 // When user invokes !Verify <username>
-                const data = doc.data();
-                if (data) { // Member may have a profile created.
+                const snapshot = user.data();
+                if (snapshot) { // Member may have a profile created.
                     const currentTime = new Date().getTime() / 1000;
-                    if (data.punish > Math.floor(currentTime)) {
+                    if (snapshot.punish > Math.floor(currentTime)) {
                         message.reply("You aren't allowed to use this command at this time. Try again later.");
                         return;
-                    } else if (data.verify == undefined) {
+                    } else if (snapshot.verify == undefined) {
                         createProfile(message, users, args[0]);
                         return;
                     }
-                    if (data.verify == true) {
+                    if (snapshot.verify == true) {
                         const errorMessage = new Discord.MessageEmbed()
                             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-                            .setTitle(`There's still a pending verifciation under ${snapshot.val().rbx_username}.`)
+                            .setTitle(`There's still a pending verifciation under ${snapshot.rbx_username}.`)
                             .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
                             .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                             .addField("Need help?", "Ping an active moderator.");
                         message.reply(errorMessage);
                         return;
                     } else {
-                        message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
+                        const errorMessage = new Discord.MessageEmbed()
+                            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                            .setTitle(`There's still a pending verifciation under ${snapshot.rbx_username}.`)
+                            .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                            .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
+                            .addField("Need help?", "Ping an active moderator.");
+                        message.reply(errorMessage);
                         return;
                     }
                 } else {
@@ -322,10 +324,11 @@ const commands = [
             if (args[0] != undefined) {
                 const authorId = message.author.id;
                 const users = db.collection("users");
-                const doc = await users.doc(authorId).get();
-                if (doc.exists) {
+                const user = await users.doc(authorId).get();
+                if (user.exists) {
+                    const snapshot = user.data();
                     const currentTime = new Date().getTime() / 1000;
-                    if (snapshot.val().punish > Math.floor(currentTime)) {
+                    if (snapshot.punish > Math.floor(currentTime)) {
                         message.reply("You aren't allowed to use this command at this time. Try again later.");
                         return;
                     }
@@ -410,29 +413,28 @@ const commands = [
             }
 
             const target = message.mentions.users.first() || args[0];
-            const users = db.ref("/users");
-            users.child(target.id).once("value", async (snapshot) => {
-                const user = snapshot.val();
-                if (user) {
-                    const rbx_userId = user.userId;
-                    try {
-                        const targetMember = message.guild.members.cache.get(target.id);
-                        const playerRecord = new Discord.MessageEmbed()
-                            .setAuthor(`${targetMember.user.username}#${targetMember.user.discriminator}`, targetMember.user.displayAvatarURL())
-                            .setTitle(targetMember.nickname || targetMember.user.username)
-                            .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
-                        message.reply(playerRecord);
-                    } catch(error) {
-                        console.log(error);
-                        message.reply("Oh no, something went wrong. Please contact the great Algorist.");
-                    }
-                } else {
-                    message.reply("The user doesn't that seem to be recorded in our database.")
-                        .then(reply => {
-                            reply.delete({ timeout: 5000 })
-                        })
+            const users = db.collection("users");
+            const user = await users.doc(target.id).get();
+            const snapshot = user.data();
+            if (user) {
+                const rbx_userId = snapshot.userId;
+                try {
+                    const targetMember = message.guild.members.cache.get(target.id);
+                    const playerRecord = new Discord.MessageEmbed()
+                        .setAuthor(`${targetMember.user.username}#${targetMember.user.discriminator}`, targetMember.user.displayAvatarURL())
+                        .setTitle(targetMember.nickname || targetMember.user.username)
+                        .setURL(`https://roblox.com/users/${rbx_userId}/profile`)
+                    message.reply(playerRecord);
+                } catch(error) {
+                    console.log(error);
+                    message.reply("Oh no, something went wrong. Please contact the great Algorist.");
                 }
-            });
+            } else {
+                message.reply("The user doesn't that seem to be recorded in our database.")
+                    .then(reply => {
+                        reply.delete({ timeout: 5000 })
+                    })
+            }
         }
     }
 ]

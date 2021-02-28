@@ -44,10 +44,34 @@ for (const file of modules) {
     })
 }
 
+/*
+const userData = require("../data.json");
+
+async function importData() {
+
+    const users = db.collection("users");
+
+    const usersId = Object.keys(userData.users);
+
+    usersId.map(async (id) => {
+        const data = userData.users[id];
+        try {
+            await users.doc(id).set(data)
+        } catch(error) {
+            console.log(id)
+        }
+    })
+
+    // const doc = await users.doc()
+}
+*/
+
 client.on("ready", () => {
     console.log("Kami is Online.");
     client.user.setActivity("with shogun", {type: "PLAYING"});
     client.functions["punish"].releaseOffenders(client, db);
+
+    // importData();
 });
 
 client.on("guildMemberAdd", (member) => {

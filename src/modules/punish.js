@@ -82,7 +82,7 @@ const commands = [
                         })
                     }
                 }
-                message.author.lastMessage.delete({timeout: 6000});
+                message.author.lastMessage?.delete({timeout: 6000});
             } else {
                 message.reply("Failed to get mentioned member.");
             }
@@ -116,42 +116,42 @@ const commands = [
             const reasoning = combineArrayAtIndex(args, 1);
             const target = message.mentions.users.first() || args[0];
             if (target) {
-                const users = db.ref("/users");
+                const users = db.collection("users");
                 const violator = message.guild.members.cache.get(target.id);
                 if (violator) {
-                    users.child(target.id).once("value", async (snapshot) => {
-                        if (!snapshot.val()?.punish) {
-                            message.reply("Record doesn't indicate the mentioned member is currently punished.")
-                                .then(reply => {
-                                    reply.delete({ timeout: 5000 })
-                                })
-                                .catch(error => console.error(error));
-                            return;
-                        }
-                        const punishedRole = message.guild.roles.cache.find(role => role.name == "Punished");
-                        if (!punishedRole) {
-                            message.reply("Failed to find Punish Role");
-                        }
-                        const modLogChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
-                        if (!modLogChannel) {
-                            message.reply("Failed to find punish-log");
-                        }
-                        const currentTime = new Date().getTime() / 1000;
-                        const releaseTime = util.getReadableTime(Math.floor(currentTime));
-                        const releaseReport = new Discord.MessageEmbed()
-                            .setAuthor("Release Report")
-                            .setThumbnail(violator.user.displayAvatarURL())
-                            .addFields(
-                                {name: "Reasoning", value: reasoning},
-                                {name: "Time Of Release", value: releaseTime},
-                                {name: "Released by", value: `${message.author.username}#${message.author.discriminator}`}
-                            )
-                            .setTimestamp();
-                        modLogChannel.send(releaseReport);
-                        violator.roles.remove(punishedRole);
-                        users.child(violator.user.id).update({
-                            punish: null,
-                        });
+                    const user = await users.doc(target.id).get();
+                    const snapshot = user.data();
+                    if (!snapshot?.punish) {
+                        message.reply("Record doesn't indicate the mentioned member is currently punished.")
+                            .then(reply => {
+                                reply.delete({ timeout: 5000 })
+                            })
+                            .catch(error => console.error(error));
+                        return;
+                    }
+                    const punishedRole = message.guild.roles.cache.find(role => role.name == "Punished");
+                    if (!punishedRole) {
+                        message.reply("Failed to find Punish Role");
+                    }
+                    const modLogChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
+                    if (!modLogChannel) {
+                        message.reply("Failed to find punish-log");
+                    }
+                    const currentTime = new Date().getTime() / 1000;
+                    const releaseTime = util.getReadableTime(Math.floor(currentTime));
+                    const releaseReport = new Discord.MessageEmbed()
+                        .setAuthor("Release Report")
+                        .setThumbnail(violator.user.displayAvatarURL())
+                        .addFields(
+                            {name: "Reasoning", value: reasoning},
+                            {name: "Time Of Release", value: releaseTime},
+                            {name: "Released by", value: `${message.author.username}#${message.author.discriminator}`}
+                        )
+                        .setTimestamp();
+                    modLogChannel.send(releaseReport);
+                    violator.roles.remove(punishedRole);
+                    await users.doc(target.id).update({
+                        punish: null,
                     })
                 }
                 message && message.author.lastMessage.delete({timeout: 6000});
@@ -201,19 +201,18 @@ const actions = {
         }
     },
     onMemberAdded: async (client, member, db) => {
-        const users = db.ref("/users");
         const authorId = member.user.id;
-        users.child(authorId).once("value", async (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-            const currentTime = new Date().getTime() / 1000;
-            if (data.punish > Math.floor(currentTime)) {
-                const getPunishedRole = member.guild.roles.cache.find(role => role.name == "Punished");
-                if (getPunishedRole) {
-                    member.roles.add(getPunishedRole);
-                }
+        const users = db.collection("users");
+        const user = await users.doc(authorId).get();
+        const snapshot = user.data();
+        if (!snapshot) return;
+        const currentTime = new Date().getTime() / 1000;
+        if (snapshot.punish > Math.floor(currentTime)) {
+            const getPunishedRole = member.guild.roles.cache.find(role => role.name == "Punished");
+            if (getPunishedRole) {
+                member.roles.add(getPunishedRole);
             }
-        });
+        }
     },
     checkBlacklistedWords: (client, message, db) => {
         blacklist.map(word => {

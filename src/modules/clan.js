@@ -1,5 +1,5 @@
-const { overwriteClan } = require("../utils/titles");
-const formatName = require("../utils/formatName");
+const { overwriteClan } = require("../util/titles");
+const formatName = require("../util/formatName");
 const Discord = require('discord.js');
 
 const clanEmbed = (clan) => {
