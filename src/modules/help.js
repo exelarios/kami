@@ -20,7 +20,6 @@ const commands = [
             }
         }
     },
-
     {
         usage: "!commands",
         description: "displays all the commands.",
@@ -41,7 +40,6 @@ const commands = [
             message.reply(embed);
         }
     },
-
     {
         usage: "!version",
         description: "displays the current version.",
@@ -49,8 +47,6 @@ const commands = [
             message.reply(client.version);
         }
     },
-
-
     {
         usage: "!restart",
         description: "restarts the bot.",

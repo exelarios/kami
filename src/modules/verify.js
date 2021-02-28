@@ -204,18 +204,16 @@ const commands = [
         description: "To verify new users to the community.",
         execute: async (client, message, db, args) => {
 
-            const users = db.collection("users");
-            const authorId = message.author.id;
-
             if (message.channel.type == "dm") {
                 message.reply("Please retry the command on a channel.");
                 return;
             }
 
-            const user = users.doc(authorId);
-            const doc = await user.get();
+            const authorId = message.author.id;
+            const users = db.collection("users");
+            const user = await users.doc(authorId).get();
             if (args[0] == undefined) {
-                if (!doc.exists) {
+                if (!user.exists) {
                     const errorMessage = new Discord.MessageEmbed()
                         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                         .setTitle("You must first provide us your username.")
@@ -224,13 +222,14 @@ const commands = [
                         .addField("Need help?", "Ping an active moderator.");
                     message.reply(errorMessage);
                 } else {
+                    const snapshot = user.data();
                     const currentTime = new Date().getTime() / 1000
-                    if (doc.data().punish > Math.floor(currentTime)) {
+                    if (snapshot.punish > Math.floor(currentTime)) {
                         message.reply("You aren't allowed to use this command at this time. Try again later.");
                         return;
                     }
-                    if (doc.data().verify != undefined) {
-                        if (doc.data().verify == true) {
+                    if (snapshot.verify != undefined) {
+                        if (snapshot.verify == true) {
                             const errorMessage = new Discord.MessageEmbed()
                                 .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                                 .setTitle("You are already verified.")
@@ -239,7 +238,7 @@ const commands = [
                                 .addField("Need help?", "Ping an active moderator.");
                             message.reply(errorMessage);
                         } else {
-                            const userId = doc.data().userId;
+                            const userId = snapshot.userId;
                             const username = doc.data().rbx_username;
                             const userStatus = await getUserStatsByUserId(userId);
                             if (userStatus == doc.data().verify_key) {
@@ -322,25 +321,23 @@ const commands = [
             }
 
             if (args[0] != undefined) {
-                const users = db.ref("/users");
                 const authorId = message.author.id;
-                users.child(authorId).once("value", async (snapshot) => {
-                    if (snapshot.val()) {
-                        const currentTime = new Date().getTime() / 1000;
-                        if (snapshot.val().punish > Math.floor(currentTime)) {
-                            message.reply("You aren't allowed to use this command at this time. Try again later.");
-                            return;
-                        }
-                        util.removeAllObtainableRole(message);
-                        createProfile(message, users, args[0]);
+                const users = db.collection("users");
+                const doc = await users.doc(authorId).get();
+                if (doc.exists) {
+                    const currentTime = new Date().getTime() / 1000;
+                    if (snapshot.val().punish > Math.floor(currentTime)) {
+                        message.reply("You aren't allowed to use this command at this time. Try again later.");
+                        return;
                     }
-                });
+                    util.removeAllObtainableRole(message);
+                    createProfile(message, users, args[0]);
+                }
             } else {
                 message.reply("Requires a second argument as a Roblox's username.");
             }
         }
     },
-
     {
         usage: "!update",
         description: "To update your social status, clan rank and nickname.",
@@ -351,42 +348,41 @@ const commands = [
                 return;
             }
 
-            const users = db.ref("/users");
             const authorId = message.author.id;
-            users.child(authorId).once("value", async (snapshot) => {
-                const user = snapshot.val();
-                if (user) {
-                    const currentTime = new Date().getTime() / 1000
-                    if (user.punish > Math.floor(currentTime)) {
-                        message.reply("You aren't allowed to use this command at this time. Try again later.")
-                            .then(reply => {
-                                reply.delete({ timeout: 5000 })
-                            })
-                            .catch(console.error);
-                        return;
-                    }
+            const users = db.collection("users");
+            const doc = await users.doc(authorId).get();
+            if (doc.exists) {
+                const snapshot = doc.data();
+                const currentTime = new Date().getTime() / 1000
+                if (snapshot.punish > Math.floor(currentTime)) {
+                    message.reply("You aren't allowed to use this command at this time. Try again later.")
+                        .then(reply => {
+                            reply.delete({ timeout: 5000 })
+                        })
+                        .catch(console.error);
+                    return;
+                }
 
-                    if (user.verify) {
-                        const userId = snapshot.val().userId;
-                        const username = snapshot.val().rbx_username;
-                        const userGroups = await getUserGroupsByUserId(userId);
-                        const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
-                        requestPrimaryClan(message, users, userClans, username);
-                    } else {
-                        message.reply("You must be verified to use this command.")
-                            .then(reply => {
-                                reply.delete({ timeout: 5000 })
-                            })
-                            .catch(console.error);
-                    }
+                if (snapshot.verify) {
+                    const userId = snapshot.userId;
+                    const username = snapshot.rbx_username;
+                    const userGroups = await getUserGroupsByUserId(userId);
+                    const userClans = userGroups.filter(element => client.clanIds.includes(element.group.id));
+                    requestPrimaryClan(message, users, userClans, username);
                 } else {
-                    message.reply("Please verify before using this command.")
+                    message.reply("You must be verified to use this command.")
                         .then(reply => {
                             reply.delete({ timeout: 5000 })
                         })
                         .catch(console.error);
                 }
-            });
+            } else {
+                message.reply("Please verify before using this command.")
+                    .then(reply => {
+                        reply.delete({ timeout: 5000 })
+                    })
+                    .catch(console.error);
+            }
         }
     },
 
