@@ -1,136 +1,24 @@
-const PREFIX = "!";
-const GROUP_ID = 7887814;
-const SERVER_ID = 755140348753215488;
-const TEST_ID = 803455843143385098;
-
-const Discord = require("discord.js");
-const { groupAPI } = require("./utils/axios");
-const fs = require("fs");
-const firebase = require("firebase-admin");
-const blacklist = require("./utils/blacklist");
-const punish = require("./modules/punish").punish;
-const util = require("./utils/shared");
 require('dotenv').config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const client = require("./util/discord");
 
-const INTERVAL = process.env.INTERVAL;
+const users = require("./routes/api/users");
 
-firebase.initializeApp({
-    credential: firebase.credential.cert({
-        "project_id": process.env.PROJECT_ID,
-        "client_email": process.env.CLIENT_EMAIL,
-        "private_key": process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-    databaseURL: "https://kami-34807-default-rtdb.firebaseio.com/"
-});
+const app = express();
 
-const client = new Discord.Client();
-const db = firebase.database();
+app.get("/", (req, res) => {
+    res.send("tora was here.")
+})
 
-client.commands = [];
-client.clanList = [];
-client.clanIds = [];
-client.version = "0.1.20";
-
-// https://groups.roblox.com/v1/groups/7887814/relationships/allies?startRowIndex=0&maxRows=500
-groupAPI.get(`/v1/groups/${GROUP_ID}/relationships/allies?startRowIndex=0&maxRows=500`)
-    .then(res => {
-        const groups = res.data.relatedGroups;
-        client.clanList = groups;
-        groups.map(group => {
-            client.clanIds.push(group.id);
-        })
-    })
-    .catch(error => {
-        console.log(error);
-    })
-
-const modules = fs.readdirSync("./src/modules")
-    .filter(file => file.endsWith('.js'));
-
-for (const file of modules) {
-    const commands = require(`./modules/${file}`);
-    const listOfCommands = Object.keys(commands);
-    listOfCommands.forEach(phase => {
-        client.commands[phase] = commands[phase];
-    });
-}
-
-client.on("ready", () => {
-    console.log("Kami is Online.");
-    client.user.setActivity("with shogun", {type: "PLAYING"});
-    const server = client.guilds.cache.find(guild => guild.id == SERVER_ID || guild.id == TEST_ID);
-    if (server) {
-        const users = db.ref("/users");
-        const punishRole = server.roles.cache.find(role => role.name == "Punished");
-        if (punishRole) {
-            const modLogChannel = server.channels.cache.find(channel => channel.name.toLowerCase() === "punish-log");
-            if (!modLogChannel) {
-                message.reply("Failed to find punish-log");
-            }
-            setInterval(function() {
-                punishRole.members.map(member => {
-                    const memberId = member.user.id;
-                    users.child(memberId).once("value", async snapshot => {
-                        let data = snapshot.val();
-                        if (!data) return;
-                        const currentTime = new Date().getTime() / 1000;
-                        if (data.punish <= Math.floor(currentTime)) {
-                            const releaseReport = new Discord.MessageEmbed()
-                                .setAuthor("Release Report")
-                                .setThumbnail(member.user.displayAvatarURL())
-                                .setDescription(`${member.nickname || member.user.username}(${member.user.username}#${member.user.discriminator}) has been released from punished at ${util.getReadableTime(currentTime)}.`)
-                            modLogChannel.send(releaseReport);
-                            try {
-                                member.user.send(releaseReport);
-                            } catch(error) {
-                                console.error(error);
-                            }
-                            member.roles.remove(punishRole);
-                            users.child(memberId).update({
-                                punish: null,
-                            });
-                        }
-                    });
-                });
-            }, INTERVAL);
-        }
-    }
-});
-
-client.on("guildMemberAdd", member => {
-    const users = db.ref("/users");
-    const authorId = member.user.id;
-    users.child(authorId).once("value", async (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-        const currentTime = new Date().getTime() / 1000;
-        if (data.punish > Math.floor(currentTime)) {
-            const getPunishedRole = member.guild.roles.cache.find(role => role.name == "Punished");
-            if (getPunishedRole) {
-                member.roles.add(getPunishedRole);
-            }
-        }
-    });
-});
-
-client.on("message", message => {
-    if (message.author.bot) {
-        return;
-    }
-
-    blacklist.map(word => {
-        if (message.content.toLowerCase().includes(word)) {
-            const args = [message.author, "24", `Ethnic Slur(s):\n "${message.content}"`];
-            punish.execute(client, message, db, args, true);
-            return;
-        }
-    })
-
-    if (message.content.startsWith(PREFIX)) {
-        const args = message.content.slice(PREFIX.length).split(/ +/);
-        const key = args.shift().toLowerCase();
-        client.commands[key]?.execute(client, message, db, args);
-    }
-});
+app.use(cors());
+app.use(bodyParser.json()); 
+app.use("/api/users", users);
 
 client.login(process.env.TOKEN);
+
+const port = process.env.PORT || 5000;
+app.listen(port, () => {
+    console.log(`Server started on port ${port}\nhttp://localhost:${port}`);
+});

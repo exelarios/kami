@@ -1,8 +1,7 @@
 const Discord = require("discord.js");
 
-module.exports = {
-
-    help: {
+const commands = [
+    {
         usage: "!help <command>",
         description: "Helps displays information about a requested command.",
         execute: (client, message, db, args) => {
@@ -21,8 +20,7 @@ module.exports = {
             }
         }
     },
-
-    commands: {
+    {
         usage: "!commands",
         description: "displays all the commands.",
         execute: (client, message, db) => {
@@ -42,17 +40,14 @@ module.exports = {
             message.reply(embed);
         }
     },
-
-    version: {
+    {
         usage: "!version",
         description: "displays the current version.",
         execute: (client, message, db) => {
             message.reply(client.version);
         }
     },
-
-
-    restart: {
+    {
         usage: "!restart",
         description: "restarts the bot.",
         execute: (client, message, db) => {
@@ -74,4 +69,13 @@ module.exports = {
             process.exit(1);
         }
     },
+]
+
+const actions = [
+
+]
+
+module.exports = {
+    commands,
+    actions
 }
