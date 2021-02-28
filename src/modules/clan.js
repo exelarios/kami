@@ -1,4 +1,5 @@
-const { clans, roles } = require("../utils/titles");
+const { overwriteClan } = require("../utils/titles");
+const formatName = require("../utils/formatName");
 const Discord = require('discord.js');
 
 const clanEmbed = (clan) => {
@@ -41,8 +42,8 @@ module.exports = {
         execute: (client, message, db, args) => {
             let result = [];
             client.clanList.map((clan) => {
-                let formattedName = clan.name;
-                result.push(clans[formattedName] || formattedName);
+                let formattedName = formatName(clan.name);
+                result.push(overwriteClan[formattedName] || formattedName);
             })
             message.channel.send(result);
         }

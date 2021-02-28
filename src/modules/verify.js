@@ -1,10 +1,9 @@
 const Discord = require("discord.js");
 const { mainAPI, userAPI, groupAPI } = require("../utils/axios");
 const { v4: uuidv4 } = require('uuid');
-const { clans } = require("../utils/titles");
 const util = require("../utils/shared");
-
-const blacklistWords = ["The", "Lord"];
+const { overwriteClan } = require("../utils/titles");
+const formatName = require("../utils/formatName");
 
 const getUserIdByUsername = async (username) => {
     try {
@@ -31,12 +30,6 @@ const getUserGroupsByUserId = async (userId) => {
     } catch(error) {
         console.log("FAILED: GET_USER_GROUP_BY_USER_ID");
     }
-}
-
-function formatRank(text) {
-    var regex  = new RegExp("( |^)" + blacklistWords.join("|") + "( |$)", "g");
-    const filtered = text.replace(/[^a-zA-ZōŌūо-\s]/g, "").replace(regex, "").replace(/^[\s+]/, "");
-    return filtered.split(" ")[0];
 }
 
 const setSocialStatusByGroupRank = async (message, clan) => {
@@ -91,8 +84,8 @@ async function requestPrimaryClan(message, userStore, userClans, username) {
 
     function clanSelected(clanChoice) {
         if (clanChoice) {
-            const clanName = clans[clanChoice.group.name] || clanChoice.group.name;
-            const clanRank = formatRank(clanChoice.role.name);
+            const clanName = overwriteClan[formatName(clanChoice.group.name)] || formatName(clanChoice.group.name);
+            const clanRank = formatName(clanChoice.role.name);
             const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
             message.member.setNickname(nickname.slice(0, 32))
                 .catch (error => {
@@ -253,7 +246,7 @@ module.exports = {
                                         const clan = userClans[0];
                                         if (clan) {
                                             const clanName = clans[clan.group.name] || clan.group.name;
-                                            const clanRank = formatRank(clan.role.name);
+                                            const clanRank = formatName(clan.role.name);
                                             const nickname = `\[${clanName}\] ${clanRank} | ${username}`;
                                             users.child(authorId).update({
                                                 primary_clan: {
@@ -303,10 +296,22 @@ module.exports = {
                             return;
                         }
                         if (data.verify == true) {
-                            message.reply("You are already verified, if you want to change your roblox account, please use \`!reverify\`.")
+                            const errorMessage = new Discord.MessageEmbed()
+                                .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                                .setTitle("You are already verified.")
+                                .addField("Get your roles back?", "Try `!update`.")
+                                .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
+                                .addField("Need help?", "Ping an active moderator.");
+                            message.reply(errorMessage);
                             return;
                         } else {
-                            message.reply(`There's still a pending verifciation under ${snapshot.val().rbx_username}. Type \`!verify\` to confirm your verification. If you want to change roblox account, please use \`!reverify <username>\``);
+                            const errorMessage = new Discord.MessageEmbed()
+                                .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+                                .setTitle(`There's still a pending verifciation under ${snapshot.val().rbx_username}.`)
+                                .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                                .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
+                                .addField("Need help?", "Ping an active moderator.");
+                            message.reply(errorMessage);
                             return;
                         }
                     } else {
