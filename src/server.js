@@ -18,7 +18,7 @@ app.use("/api/users", users);
 
 client.login(process.env.TOKEN);
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 9000;
 app.listen(port, () => {
     console.log(`Server started on port ${port}\nhttp://localhost:${port}`);
 });
