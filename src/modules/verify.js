@@ -111,7 +111,7 @@ async function requestPrimaryClan(message, userStore, userClans, username) {
     let headingChoice = await message.channel.send("Please enter the number corresponding to the clan you want to represent.\n");
     const clanListing = userClans.map((clan, index) => {
         let output = "";
-        output += "[" + (index + 1) + "] "+ (clans[clan.group.name] || clan.group.name);
+        output += "[" + (index + 1) + "] "+ (overwriteClan[formatName(clan.group.name)] || formatName(clan.group.name));
         return output;
     })
 
