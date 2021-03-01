@@ -168,16 +168,18 @@ async function createProfile(message, users, username) {
     });
     const sendKey = new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-        .setTitle(`Please post the provided key onto your feed.`)
-        .setDescription("https://roblox.com/feeds")
+        .setTitle(`Verification using Key`)
+        .addField(`Post the provided key onto your feed.`, "https://roblox.com/feeds")
         .addField("Verification Key", `\`${userCode}\``)
         .addField("What's next?", "Go back to `join-verification` and type `!verify`")
-        .setImage("https://i.imgur.com/sAl9tu2.png");
+        .addField("Having trouble?", "Please ping an active moderator in the server.");
     try {
         const responseMessage = new Discord.MessageEmbed()
             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
-            .setTitle("Your verification key has been sent!")
-            .setDescription("If you didn't receive anything please ping an active moderator.");
+            .setTitle("Pick your poison.")
+            .addField(`Choice 1: Join a place & confirm your account.`, "https://www.roblox.com/games/6459111781/tora-smells")
+            .addField("Choice 2: Verify by Roblox's user status", "Further instructions are sent to you privately.")
+            .setFooter("If you didn't receive anything please ping an active moderator.");
         message.author.send(sendKey);
         message.reply(responseMessage);
     } catch(error) {
