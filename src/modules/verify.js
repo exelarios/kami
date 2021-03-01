@@ -291,7 +291,8 @@ const commands = [
                         const errorMessage = new Discord.MessageEmbed()
                             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                             .setTitle(`There's still a pending verifciation under ${snapshot.rbx_username}.`)
-                            .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                            // .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                            .addField("Still want to verify on that account?", "https://www.roblox.com/games/6459111781/tora-smells")
                             .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                             .addField("Need help?", "Ping an active moderator.");
                         message.reply(errorMessage);
@@ -300,7 +301,8 @@ const commands = [
                         const errorMessage = new Discord.MessageEmbed()
                             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
                             .setTitle(`There's still a pending verifciation under ${snapshot.rbx_username}.`)
-                            .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                            // .addField("Still want to verify on that account?", "Paste your key into https://roblox.com/feeds then do `!verify`")
+                            .addField("Still want to verify on that account?", "https://www.roblox.com/games/6459111781/tora-smells")
                             .addField("Want to change the verify account?", "Try `!reverify <username>` without inequality signs.")
                             .addField("Need help?", "Ping an active moderator.");
                         message.reply(errorMessage);
