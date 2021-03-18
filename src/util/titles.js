@@ -10,7 +10,8 @@ const roles = [
 const overwriteClan = {
     "Chosokabe": "Chōsokabe",
     "Mori": "Mōri",
-    "Nakamuras": "Nakamura"
+    "Nakamuras": "Nakamura",
+    "Od": "Oda"
 };
 
 module.exports = {
