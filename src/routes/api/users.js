@@ -2,7 +2,7 @@ const express = require("express");
 const db = require("../../util/firebase");
 const router = express.Router();
 const protected = require("../../middleware/protected");
-
+const client = require("../../util/discord");
 
 router.get("/", async(req, res) => {
     res.send({
@@ -14,11 +14,15 @@ router.get("/:userId", protected, async (req, res) => {
     const users = db.collection("users");
     const userId = parseInt(req.params.userId);
     const snapshot = await users.where("userId", "==", userId).get();
+
     if (!snapshot.empty) {
-        const discord_id = snapshot.docs[0].id;
+        let sameUserId = {};
+        snapshot.docs.map(doc => {
+            sameUserId[doc.id] = doc.data();
+        });
         res.send({
             success: true,
-            user: {...snapshot.docs[0].data(), discord_id}
+            users: sameUserId,
         })
     } else {
         res.send({
@@ -73,6 +77,14 @@ router.delete("/:id", protected, async (req, res) => {
         });
         console.log(`Failed to find ${id} user.`);
     }
+});
+
+router.post("/:id/update", protected, async (req, res) => {
+    const { id } = req.params;
+    client.functions["verify"].update(client, db, id);
+    res.send({
+        success: true
+    })
 });
 
 module.exports = router;

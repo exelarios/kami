@@ -151,6 +151,7 @@ async function createProfile(message, users, username) {
     const authorId = message.author.id;
     const userCode = uuidv4();
     const rbx_userId = await getUserIdByUsername(username);
+
     if (!rbx_userId) {
         const errorMessage = new Discord.MessageEmbed()
             .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
@@ -159,6 +160,7 @@ async function createProfile(message, users, username) {
         message.reply(errorMessage);
         return;
     }
+
     await users.doc(authorId).set({
         verify: false,
         rbx_username: username,
@@ -439,8 +441,34 @@ const commands = [
     }
 ]
 
+function setCommoner(client, member) {
+
+}
+
+function setFactionMember(client, member) {
+
+}
+
 const actions = {
-    
+    update: async (client, db, id) => {
+        const server = client.guilds.cache.find(guild => guild.id == client.SERVER_ID || guild.id == client.TEST_ID);
+        const member = server.members.cache.find(member => member.id == id);
+        if (server && user) {
+            const users = db.collection("users");
+            const user = users.doc(id);
+            const doc = await user.get();
+            if (doc.exists) {
+                const snapshot = doc.data();
+                if (snapshot.primary_clan) {
+
+                } else {
+
+                }
+            }
+        } else {
+            console.log("Fail to find server or member of the server.");
+        }
+    } 
 }
 
 module.exports = {
