@@ -2,10 +2,10 @@ const PREFIX = "!";
 const GROUP_ID = 7887814;
 
 const Discord = require("discord.js");
-const db = require("../util/firebase");
+const db = require("../utils/firebase");
 const fs = require("fs");
 
-const { groupAPI } = require("../util/axios");
+const { groupAPI } = require("../utils/axios");
 
 const client = new Discord.Client();
 

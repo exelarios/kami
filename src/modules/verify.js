@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const { mainAPI, userAPI, groupAPI } = require("../util/axios");
+const { mainAPI, userAPI, groupAPI } = require("../utils/axios");
 const { v4: uuidv4 } = require('uuid');
 const util = require("../util/shared");
 const { overwriteClan } = require("../util/titles");
