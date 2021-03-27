@@ -11,7 +11,8 @@ const overwriteClan = {
     "Chosokabe": "Chōsokabe",
     "Mori": "Mōri",
     "Nakamuras": "Nakamura",
-    "Od": "Oda"
+    "Od": "Oda",
+    "shida": "Ishida"
 };
 
 module.exports = {
