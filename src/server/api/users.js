@@ -1,7 +1,7 @@
 const express = require("express");
-const db = require("../../utils/firebase");
+const db = require("../utils/firebase");
 const router = express.Router();
-const protected = require("../../middleware/protected");
+const protected = require("../middleware/protected");
 const client = require("../../utils/discord");
 
 router.get("/", async(req, res) => {

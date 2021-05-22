@@ -168,6 +168,7 @@ async function createProfile(message, users, username) {
         userId: rbx_userId,
         primary_clan: null
     });
+
     const sendKey = new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
         .setTitle(`Please post the provided key onto your feed.`)

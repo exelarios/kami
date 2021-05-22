@@ -1,8 +1,8 @@
 const Discord = require("discord.js");
 const { roles } = require("../util/titles");
-const util = require("../util/shared");
-const blacklist = require("../util/blacklist");
-const discordAPI = require("../util/discordAPI");
+const util = require("../../src/util/shared");
+const blacklist = require("../../src/util/blacklist");
+const discordAPI = require("../../src/util/discordAPI");
 
 function combineArrayAtIndex(args, starting) {
     let result = "";

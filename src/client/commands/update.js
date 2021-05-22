@@ -1,9 +1,11 @@
-const Command = require("../Command");
+const Command = require("../models/Command");
 
 class Update extends Command {
     constructor(client) {
         super(client, {
-            channelOnly: true
+            channelOnly: false,
+            description: "Allows you to update your clan ranking and username if changed.",
+            args: null
         });
     }
 
