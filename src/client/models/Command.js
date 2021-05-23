@@ -1,7 +1,7 @@
 const db = require("../../server/utils/firebase");
-const Argument = require("./Argument");
+const { Discord } = require("../utils/discord");
 const User = require("./User");
-
+const embeds = require("../utils/embeds");
 class Command {
 
     constructor(client, props) {
@@ -32,10 +32,6 @@ class Command {
         }
     }
 
-    onError(error) {
-        console.error(error);
-    }
-
     async hasPermission(msg) {
         if (msg.author.bot) return false;
         if ((this.channelOnly == true) && (msg.channel.type == "dm")) {
@@ -50,15 +46,46 @@ class Command {
         return true;
     }
 
+    async reply(interaction, options) {
+        this.client.api.interactions(interaction.id, interaction.token).callback.post({
+            data: options
+        });
+    }
+
     async execute(interaction, args) {
-        if (!await this.hasPermission(msg)) return;
-        const authorId = msg.author.id;
-        const user = await new User(authorId);
-        if (user.isMuted()) {
-            msg.reply("You aren't allowed to use this command at this time. Try again later.");
-            return;
+        try {
+            // if (!await this.hasPermission(msg)) return;
+            const authorId = interaction.member.user.id;
+            const user = await new User(authorId);
+            // if (user.isMuted()) {
+            //     msg.reply("You aren't allowed to use this command at this time. Try again later.");
+            //     return;
+            // }
+            return await this.run(interaction, args, user);
+        } catch(error) {
+            if (typeof error == "object") {
+                this.onMessage(interaction, {
+                    data: {
+                        type: 4,
+                        data: await Discord.createAPIMessage(interaction, embeds.message({
+                            title: error.title,
+                            message: error.message
+                        }))
+                    }
+                })            
+            } else {
+                console.log("2");
+                this.onMessage(interaction, {
+                    data: {
+                        type: 4,
+                        data: await Discord.createAPIMessage(interaction, embeds.message({
+                            title: "Unexpected Exception",
+                            message: error.message
+                        }))
+                    }
+                })            
+            }
         }
-        return this.run(msg, await this.args.obatin(msg, args), user);
     }
 }
 

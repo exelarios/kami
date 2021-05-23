@@ -1,21 +1,20 @@
-const PREFIX = "!";
 const GROUP_ID = process.env.COMMUNITY_GROUP;
 
 const fs = require("fs");
-const Discord = require("discord.js");
+const { Discord, client } = require("./utils/discord");
 const Slash = require("./models/Slash.js");
-
-const client = new Discord.Client();
 
 client.version = "0.3.0";
 client.commands = {};
 
+/*
+TODO:
+- Implement a way to update the commands through the client.
+*/
+
 async function onStart() {
-
     const slash = new Slash(process.env.TOKEN, client.user.id);
-
     const registeredCommands = await slash.getCommands();
-
     const commands = fs.readdirSync("./src/client/commands").filter(file => file.endsWith(".js"));
 
     try {
@@ -36,30 +35,29 @@ async function onStart() {
         console.error(error);
     }
 
-    // client.ws.on('INTERACTION_CREATE', async (interaction) => {
-
-        // if(command == "echo") {
-        //     const description = args.find(arg => arg.name.toLowerCase() == "content").value;
-        //     const embed = new Discord.MessageEmbed()
-        //         .setTitle("Echo!")
-        //         .setDescription(description)
-        //         .setAuthor(interaction.member.user.username);
-
-        //     client.api.interactions(interaction.id, interaction.token).callback.post({
-        //         data: {
-        //             type: 4,
-        //             data: await createAPIMessage(interaction, embed)
-        //         }
-        //     });
-        // }
-    // });
-
-    console.log("Kami is Online.");
     client.user.setActivity("with shogun", {type: "PLAYING"});
+    console.log("Kami is Online.");
 }
 
-/*
+async function onInteraction(interaction) {
+    const key = interaction.data.name.toLowerCase();
+    const options = interaction.data.options;
+    let args = {};
 
+    options.forEach(option => {
+        args[option.name] = option.value;
+    });
+
+    await client.commands[key].execute(interaction, args);
+}
+
+
+client.on("ready", onStart);
+client.ws.on("INTERACTION_CREATE", onInteraction);
+
+module.exports = client;
+
+/*
 SUB_COMMAND: 1
 SUB_COMMAND_GROUP: 2
 STRING: 3
@@ -69,43 +67,4 @@ USER: 6
 CHANNEL: 7
 ROLE: 8
 MENTIONABLE: 9
-
 */
-
-async function createAPIMessage(interaction, content) {
-    const apiMessage = await Discord.APIMessage.create(client.channels.resolve(interaction.channel_id), content)
-        .resolveData()
-        .resolveFiles();
-    
-    return { ...apiMessage.data, files: apiMessage.files };
-}
-
-async function onInteraction(interaction) {
-    // console.log(interaction);
-    const command = interaction.data.name.toLowerCase();
-    const args = interaction.data.options;
-
-    console.log(args);
-
-    if(command == "verify") {
-        const description = args.find(arg => arg.name.toLowerCase() == "username").value;
-        const embed = new Discord.MessageEmbed()
-            .setTitle("Echo!")
-            .setDescription(description)
-            .setAuthor(interaction.member.user.username);
-
-        client.api.interactions(interaction.id, interaction.token).callback.post({
-            data: {
-                type: 4,
-                data: await createAPIMessage(interaction, embed)
-            }
-        });
-    }
-}
-
-
-client.on("ready", onStart);
-client.ws.on("INTERACTION_CREATE", onInteraction);
-// client.on("message", message);
-
-module.exports = client;
