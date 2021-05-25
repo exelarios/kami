@@ -1,6 +1,6 @@
 const db = require("../../server/utils/firebase");
 const { Discord } = require("../utils/discord");
-const User = require("./User");
+const User = require("./user");
 const embeds = require("../utils/embeds");
 class Command {
 
@@ -63,26 +63,22 @@ class Command {
             // }
             return await this.run(interaction, args, user);
         } catch(error) {
-            if (typeof error == "object") {
-                this.onMessage(interaction, {
-                    data: {
-                        type: 4,
-                        data: await Discord.createAPIMessage(interaction, embeds.message({
-                            title: error.title,
-                            message: error.message
-                        }))
-                    }
-                })            
+            if (error instanceof Error) {
+                console.log(error);
+                this.reply(interaction, {
+                    type: 4,
+                    data: await Discord.createAPIMessage(interaction, embeds.message({
+                        title: "Unexpected Exception",
+                        message: error.message
+                    }))
+                });
             } else {
-                console.log("2");
-                this.onMessage(interaction, {
-                    data: {
-                        type: 4,
-                        data: await Discord.createAPIMessage(interaction, embeds.message({
-                            title: "Unexpected Exception",
-                            message: error.message
-                        }))
-                    }
+                this.reply(interaction, {
+                    type: 4,
+                    data: await Discord.createAPIMessage(interaction, embeds.message({
+                        title: error.title,
+                        message: error.message
+                    }))
                 })            
             }
         }

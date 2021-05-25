@@ -1,5 +1,5 @@
 const { slashAPI } = require("../utils/axios");
-
+const axios = require("axios");
 class Slash {
 
     constructor(token, clientId) {
@@ -55,9 +55,23 @@ class Slash {
 
     }
 
-    async editCommand(options, commandId, guildId) {
+    async editCommand(options, commandId) {
+        if (typeof options !== "object")
+            throw new Error("options must be of type object. Received: " + typeof options);
 
+        if (typeof commandId !== "string")
+            throw new Error("commandId must be of type string. Received: " + typeof commandId);
+
+        if (!options.name || !options.description)
+            throw new Error("options is missing name or description property!");
+
+        const res = await slashAPI.patch(`applications/${this.clientId}/commands/${commandId}`, options, {
+            headers: { Authorization: `Bot ${this.token}` },
+        });
+
+        return res.data;
     }
+
 }
 
 module.exports = Slash;

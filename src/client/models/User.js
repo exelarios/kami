@@ -24,6 +24,11 @@ class User {
         })
     }
 
+    /*
+        Updates the necessary values that's called within the updatedObject.
+        @params updatedObject the updated object
+        @return void
+    */
     async update(updatedObject) {
         if (!this.exists) throw new Error("User's document doesn't exist.");
         await this.userDoc.update(updatedObject);

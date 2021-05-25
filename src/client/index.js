@@ -2,14 +2,15 @@ const GROUP_ID = process.env.COMMUNITY_GROUP;
 
 const fs = require("fs");
 const { Discord, client } = require("./utils/discord");
-const Slash = require("./models/Slash.js");
+const Slash = require("./models/slash.js");
 
 client.version = "0.3.0";
 client.commands = {};
 
 /*
 TODO:
-- Implement a way to update the commands through the client.
+- Implement mute, unmute, update
+- Command permissions, cooldown
 */
 
 async function onStart() {
@@ -44,7 +45,7 @@ async function onInteraction(interaction) {
     const options = interaction.data.options;
     let args = {};
 
-    options.forEach(option => {
+    options && options.forEach(option => {
         args[option.name] = option.value;
     });
 

@@ -1,4 +1,4 @@
-const Command = require("../models/Command");
+const Command = require("../models/command");
 const rbxAPI = require("../utils/robloxAPI");
 const embeds = require("../utils/embeds");
 const { Discord } = require("../utils/discord");
@@ -8,12 +8,13 @@ class Verify extends Command {
             channelOnly: true,
             description: "verifies identity between your roblox and discord account.",
             cooldown: 1,
+            private: false,
             args: [
                 {
-                    name: "username",
-                    description: "Your Roblox's username.",
-                    type: 3, // String
-                    require: true
+                    "name": "username",
+                    "description": "Your Roblox's username.",
+                    "type": 3, // String
+                    "required": true
                 }
             ]
         });
@@ -33,10 +34,8 @@ class Verify extends Command {
 
             await user.create(userId);
             this.reply(interaction, {
-                data: {
-                    type: 4,
-                    data: await Discord.createAPIMessage(interaction, embeds.onVerify())
-                }
+                type: 4,
+                data: await Discord.createAPIMessage(interaction, embeds.onVerify())
             });
         } else {
             // If they are within the database, now check if they are verified.
@@ -45,17 +44,14 @@ class Verify extends Command {
                 const username = await rbxAPI.getUsernameByUserId(pendingUserId);
                 if (!username)
                     throw new Error("Failed to fetch Roblox's username by userId.");
-                // msg.reply(embeds.pendingVerify({username}));
                 this.reply(interaction, {
                     type: 4,
                     data: await Discord.createAPIMessage(interaction, embeds.pendingVerification({
                         username: username
                     }))
                 });
-
             } else {
                 // Prompts them different commnads to run.
-                // msg.reply(embeds.alreadyVerified());
                 this.reply(interaction, {
                     type: 4,
                     data: await Discord.createAPIMessage(interaction, embeds.verified())
