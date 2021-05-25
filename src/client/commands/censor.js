@@ -1,12 +1,15 @@
 const Command = require("../models/command");
+const { Discord } = require("../utils/discord");
+const Message = require("../models/message");
 
 class Censor extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
             description: "adds a word onto the blacklist.",
-            userPermission: "MANAGE_ROLES",
-            private: true,
+            verifiedRequired: false,
+            permissions: ["Moderator", "Administrator"],
+            public: false,
             args: [
                 {
                     "name": "word",
@@ -20,10 +23,8 @@ class Censor extends Command {
 
     async run(interaction, args) {
         const { word } = args;
-        throw {
-            title: "Blacklisted",
-            message: word
-        }        
+        const roleId = await Discord.getRoleByName(word).toString();
+        throw new Message("Blacklisted", word);
     }
 
 }

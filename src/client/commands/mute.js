@@ -5,8 +5,9 @@ class Mute extends Command {
         super(client, {
             channelOnly: true,
             description: "Checks if the commands are working.",
-            userPermission: "MANAGE_ROLES",
-            private: true,
+            verifiedRequired: false,
+            permissions: ["Moderator", "Administrator"],
+            public: false,
             args: [
                 {
                     "name": "offender",
@@ -38,6 +39,10 @@ class Mute extends Command {
 
     async run(interaction, args, user) {
         const { offender, time, record, reasoning } = args;
+        throw {
+            title: "yes",
+            message: "working"
+        }
     }
 
 }

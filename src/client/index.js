@@ -18,6 +18,8 @@ async function onStart() {
     const registeredCommands = await slash.getCommands();
     const commands = fs.readdirSync("./src/client/commands").filter(file => file.endsWith(".js"));
 
+    // console.log(client.guilds.cache);
+
     try {
         for (const file of commands) {
             const Command = require(`../client/commands/${file}`);
@@ -28,8 +30,9 @@ async function onStart() {
                 await slash.createCommand({
                     name: key,
                     description: client.commands[key].description,
-                    options: client.commands[key]?.args
-                })
+                    options: client.commands[key]?.args,
+                    default_permission: client.commands[key]?.public,
+                });
             }
         }
     } catch(error) {

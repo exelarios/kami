@@ -25,27 +25,27 @@ class User {
     }
 
     /*
-        Updates the necessary values that's called within the updatedObject.
-        @params updatedObject the updated object
-        @return void
+    * Updates the necessary values that's called within the updatedObject.
+    * @params updatedObject the updated object
+    * @returns void
     */
     async update(updatedObject) {
         if (!this.exists) throw new Error("User's document doesn't exist.");
         await this.userDoc.update(updatedObject);
     }
 
-    get() {
+    get data() {
         return this.userRef.data();
     }
 
-    isVerified() {
-        return this.get()?.verify;
+    get isVerified() {
+        return this.data.verify;
     }
 
-    isMuted() {
+    get isMuted() {
         if (!this.exists) return false;
         const currentTime = new Date().getTime() / 1000;
-        return this.get()?.punish > Math.floor(currentTime);
+        return this.data.punish > Math.floor(currentTime);
     }
 
 }

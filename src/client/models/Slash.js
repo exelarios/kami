@@ -72,6 +72,29 @@ class Slash {
         return res.data;
     }
 
+    async editPermissions(permissions, guildId, commandId) {
+        if (!Array.isArray(permissions))
+            throw new Error("permissions must be of type array. Received: " + typeof permissions);
+
+        if (typeof guildId !== "string")
+            throw new Error("guildID must be of type string. Received: " + typeof guildId);
+
+        if (typeof commandId !== "string")
+            throw new Error("commandID must be of type string. Received: " + typeof commandId);
+
+        const response = await slashAPI.put(
+            `applications/${this.clientId}/guilds/${guildId}/commands/${commandId}/permissions`,
+            {
+                permissions: permissions
+            },
+            {
+                headers: { Authorization: `Bot ${this.token}` }
+            }
+        );
+
+        return response.data;
+    }
+
 }
 
 module.exports = Slash;

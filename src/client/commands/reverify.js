@@ -8,6 +8,8 @@ class Reverify extends Command {
         super(client, {
             channelOnly: true,
             description: "Reverify your account to diferent roblox's username.",
+            verifiedRequired: false,
+            public: false,
             args: [
                 {
                     "name": "username",

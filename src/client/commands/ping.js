@@ -1,12 +1,16 @@
 const Command = require("../models/command");
+const Message = require("../models/message");
 const Slash = require("../models/slash");
+const { Discord } = require("../utils/discord");
 
 class Ping extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
             description: "Checks if the commands are working.",
-            userPermission: "MANAGE_ROLES",
+            permissions: ["Moderator", "Administrator"],
+            verifiedRequired: false,
+            public: false,
             args: [
                 {
                     "name": "command_name",
@@ -25,28 +29,35 @@ class Ping extends Command {
             const commands = await slash.getCommands();
             const command = commands.filter(command => command.name == commandName.toLowerCase())[0];
             if (command) {
-                const cmdInfo = this.client.commands[command.name];
+                const instance = this.client.commands[command.name];
                 await slash.editCommand({
                     "name": command.name,
-                    "description": cmdInfo.description,
-                    "options": cmdInfo?.args
+                    "description": instance.description,
+                    "options": instance?.args,
+                    "default_permission": cmdInfo?.public
                 }, command.id);
-                throw {
-                    "title": `Updating ${command.name} Command`,
-                    "message": "ok"
+
+                if (!instance.public && instance.permissions != undefined) {
+                    let permissions = [];
+                    for (let permission of instance.permissions) {
+                        const roleId = await Discord.getRoleByName(permission);
+                        permissions.push({
+                            "id": roleId.toString(),
+                            "type": 1,
+                            "permission": true
+                        })
+                    }
+
+                    await slash.editPermissions(permissions, process.env.GUILDID, command.id);
                 }
+
+                throw new Message(`Updating ${command.name} Command`, "ok");
             } else {
-                throw {
-                    "title": "Invalid parameters",
-                    "message": `Failed to find ${commandName} Command`,
-                }
-            }
-        } else {
-            throw {
-                title: "Ping",
-                message: `This bot is currently running on version: ${this.client.version}`
+                throw new Message("Invalid parameters", `"Failed to find ${commandName} Command`);
             }
         }
+
+        throw new Message("Ping", `This bot is currently running on version: ${this.client.version}`);
 
     }
 

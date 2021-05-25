@@ -8,7 +8,8 @@ class Verify extends Command {
             channelOnly: true,
             description: "verifies identity between your roblox and discord account.",
             cooldown: 1,
-            private: false,
+            public: true,
+            verifiedRequired: true,
             args: [
                 {
                     "name": "username",
@@ -39,8 +40,8 @@ class Verify extends Command {
             });
         } else {
             // If they are within the database, now check if they are verified.
-            if (!user.isVerified()) {
-                const pendingUserId = user.get().userId;
+            if (!user.isVerified) {
+                const pendingUserId = user.data.userId;
                 const username = await rbxAPI.getUsernameByUserId(pendingUserId);
                 if (!username)
                     throw new Error("Failed to fetch Roblox's username by userId.");
