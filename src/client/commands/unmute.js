@@ -1,12 +1,13 @@
 const Command = require("../models/command");
+const clearance = require("../utils/clearance");
 
 class Unmute extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
             description: "Umutes an offender from being muted.",
-            verifiedRequired: false,
-            permissions: ["Moderator", "Administrator"],
+            verifyRequired: false,
+            permissions: clearance.admin,
             public: false,
             args: [
                 {

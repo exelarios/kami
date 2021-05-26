@@ -1,12 +1,13 @@
 const Command = require("../models/Command");
+const clearance = require("../utils/clearance");
 
 class Mute extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
             description: "Checks if the commands are working.",
-            verifiedRequired: false,
-            permissions: ["Moderator", "Administrator"],
+            verifyRequired: false,
+            permissions: clearance.admin,
             public: false,
             args: [
                 {

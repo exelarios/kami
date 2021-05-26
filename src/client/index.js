@@ -19,6 +19,7 @@ async function onStart() {
     const commands = fs.readdirSync("./src/client/commands").filter(file => file.endsWith(".js"));
 
     // console.log(client.guilds.cache);
+    // console.log(registeredCommands);
 
     try {
         for (const file of commands) {

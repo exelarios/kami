@@ -2,6 +2,7 @@ const Command = require("../models/command");
 const rbxAPI = require("../utils/robloxAPI");
 const embeds = require("../utils/embeds");
 const { Discord } = require("../utils/discord");
+const { Message } = require("../models/message");
 
 class Reverify extends Command {
     constructor(client) {
@@ -9,7 +10,7 @@ class Reverify extends Command {
             channelOnly: true,
             description: "Reverify your account to diferent roblox's username.",
             verifiedRequired: false,
-            public: false,
+            public: true,
             args: [
                 {
                     "name": "username",
@@ -23,32 +24,24 @@ class Reverify extends Command {
 
     async run(interaction, args, user) {
         const { username } = args;
-        if (user.exists) {
-            const userId = await rbxAPI.getUserIdByUsername(username);
-            if (!userId) {
-                throw {
-                    title: "Gekokujō's Verification",
-                    message: "Please try again using a valid roblox username."
-                };
-            }
 
-            await user.update({
-                verify: false,
-                userId: userId,
-                primary_clan: null
-            });
+        if (!user.document.exists) 
+            throw new Message("Gekokujō's Verification", "Your account isn't associated with any roblox account, please verify using `/verify`");
 
-            this.reply(interaction, {
-                type: 4,
-                data: await Discord.createAPIMessage(interaction, embeds.onVerify())
-            });
-        } else {
-            throw {
-                title: "Gekokujō's Verification",
-                message: "Your account isn't associated with any roblox account, please verify using `/verify`"
-            };
-        }
+        const userId = await rbxAPI.getUserIdByUsername(username);
+        if (!userId)
+            throw new Message("Gekokujō's Verification", "Please try again using a valid roblox username.");
 
+        await user.document.update({
+            verify: false,
+            userId: userId,
+            primary_clan: null
+        });
+
+        this.reply(interaction, {
+            type: 4,
+            data: await Discord.createAPIMessage(interaction, embeds.onVerify())
+        });
     }
 
 }

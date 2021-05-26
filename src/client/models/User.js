@@ -39,7 +39,7 @@ class User {
     }
 
     get isVerified() {
-        return this.data.verify;
+        return this.data?.verify;
     }
 
     get isMuted() {

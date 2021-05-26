@@ -9,7 +9,7 @@ class Verify extends Command {
             description: "verifies identity between your roblox and discord account.",
             cooldown: 1,
             public: true,
-            verifiedRequired: true,
+            verifyRequired: false,
             args: [
                 {
                     "name": "username",
@@ -23,7 +23,7 @@ class Verify extends Command {
 
     async run(interaction, args, user) {
         const { username } = args;
-        if (!user.exists) {
+        if (!user.document.exists) {
             // Ensure the inputted roblox username is valid & gets the userId by username.
             const userId = await rbxAPI.getUserIdByUsername(username);
             if (!userId) {
@@ -33,15 +33,15 @@ class Verify extends Command {
                 };
             }
 
-            await user.create(userId);
+            await user.document.create(userId);
             this.reply(interaction, {
                 type: 4,
                 data: await Discord.createAPIMessage(interaction, embeds.onVerify())
             });
         } else {
             // If they are within the database, now check if they are verified.
-            if (!user.isVerified) {
-                const pendingUserId = user.data.userId;
+            if (!user.document.isVerified) {
+                const pendingUserId = user.document.data.userId;
                 const username = await rbxAPI.getUsernameByUserId(pendingUserId);
                 if (!username)
                     throw new Error("Failed to fetch Roblox's username by userId.");

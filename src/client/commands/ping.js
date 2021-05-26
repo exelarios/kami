@@ -2,14 +2,15 @@ const Command = require("../models/command");
 const Message = require("../models/message");
 const Slash = require("../models/slash");
 const { Discord } = require("../utils/discord");
+const clearance = require("../utils/clearance");
 
 class Ping extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
             description: "Checks if the commands are working.",
-            permissions: ["Moderator", "Administrator"],
-            verifiedRequired: false,
+            permissions: clearance.admin,
+            verifyRequired: false,
             public: false,
             args: [
                 {
@@ -34,7 +35,7 @@ class Ping extends Command {
                     "name": command.name,
                     "description": instance.description,
                     "options": instance?.args,
-                    "default_permission": cmdInfo?.public
+                    "default_permission": instance?.public
                 }, command.id);
 
                 if (!instance.public && instance.permissions != undefined) {

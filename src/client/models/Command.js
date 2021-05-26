@@ -2,6 +2,8 @@ const db = require("../../server/utils/firebase");
 const { Discord } = require("../utils/discord");
 const User = require("./user");
 const embeds = require("../utils/embeds");
+const Message = require("../models/message");
+
 class Command {
 
     constructor(client, props) {
@@ -40,7 +42,7 @@ class Command {
         return false;
     }
 
-    async hasPermission(interaction) {
+    async hasPermission(interaction, user) {
         if (interaction.member == undefined) {
             this.reply(interaction, {
                 type: 4,
@@ -51,10 +53,6 @@ class Command {
             return false;
         }
         if (this.hasCooldown(interaction)) return false;
-        // if (msg.channel.type != "dm" && !msg.member.hasPermission(this.userPermission)) {
-        //     msg.reply("You do not have permissions to run this command.");
-        //     return false;
-        // }
         return true;
     }
 
@@ -66,14 +64,16 @@ class Command {
 
     async execute(interaction, args) {
         try {
+            const authorId = interaction.member.user.id;
             if (!await this.hasPermission(interaction)) return;
             // If "member" doesn't exist; this means it's called inside of direct message.
-            const authorId = interaction.member.user.id;
-            const user = await new User(authorId);
-            // if (user.isMuted()) {
-            //     msg.reply("You aren't allowed to use this command at this time. Try again later.");
-            //     return;
-            // }
+            const user = await this.client.users.fetch(authorId);
+            if (!user.document) {
+                user.document = await new User(authorId);
+            }
+            // Checks if the command requires the user to be verified.
+            if (!user.document.isVerified && this.verifyRequired)
+                throw new Message("Access Denied", "You must be verified in order to run this command.");
             return await this.run(interaction, args, user);
         } catch(error) {
             if (error instanceof Error) {

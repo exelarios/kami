@@ -1,14 +1,15 @@
 const Command = require("../models/command");
 const { Discord } = require("../utils/discord");
 const Message = require("../models/message");
+const clearance = require("../utils/clearance");
 
 class Censor extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
             description: "adds a word onto the blacklist.",
-            verifiedRequired: false,
-            permissions: ["Moderator", "Administrator"],
+            verifyRequired: false,
+            permissions: clearance.admin,
             public: false,
             args: [
                 {
