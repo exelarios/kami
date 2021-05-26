@@ -1,7 +1,7 @@
 const GROUP_ID = process.env.COMMUNITY_GROUP;
 
 const fs = require("fs");
-const { Discord, client } = require("./utils/discord");
+const { client } = require("./utils/discord");
 const Slash = require("./models/slash.js");
 
 client.version = "0.3.0";
@@ -9,37 +9,32 @@ client.commands = {};
 
 /*
 TODO:
-- Implement mute, unmute, update
-- Command permissions, cooldown
+- Implement mute, unmute, censor, uncensor
 */
 
-async function onStart() {
+async function loadCommands() {
     const slash = new Slash(process.env.TOKEN, client.user.id);
     const registeredCommands = await slash.getCommands();
     const commands = fs.readdirSync("./src/client/commands").filter(file => file.endsWith(".js"));
 
-    // console.log(client.guilds.cache);
-    // console.log(registeredCommands);
-
-    try {
-        for (const file of commands) {
-            const Command = require(`../client/commands/${file}`);
-            const key = file.split(".")[0];
-            client.commands[key] = new Command(client);
-            const doesExist = registeredCommands.some(command => command.name == key);
-            if (!doesExist) {
-                await slash.createCommand({
-                    name: key,
-                    description: client.commands[key].description,
-                    options: client.commands[key]?.args,
-                    default_permission: client.commands[key]?.public,
-                });
-            }
+    for (const file of commands) {
+        const Command = require(`../client/commands/${file}`);
+        const key = file.split(".")[0];
+        client.commands[key] = new Command(client);
+        const doesExist = registeredCommands.some(command => command.name == key);
+        if (!doesExist) {
+            await slash.createCommand({
+                name: key,
+                description: client.commands[key].description,
+                options: client.commands[key]?.args,
+                default_permission: client.commands[key]?.public,
+            });
         }
-    } catch(error) {
-        console.error(error);
     }
+}
 
+async function onStart() {
+    await loadCommands();
     client.user.setActivity("with shogun", {type: "PLAYING"});
     console.log("Kami is Online.");
 }
@@ -56,20 +51,7 @@ async function onInteraction(interaction) {
     await client.commands[key].execute(interaction, args);
 }
 
-
 client.on("ready", onStart);
 client.ws.on("INTERACTION_CREATE", onInteraction);
 
 module.exports = client;
-
-/*
-SUB_COMMAND: 1
-SUB_COMMAND_GROUP: 2
-STRING: 3
-INTEGER: 4
-BOOLEAN: 5
-USER: 6
-CHANNEL: 7
-ROLE: 8
-MENTIONABLE: 9
-*/

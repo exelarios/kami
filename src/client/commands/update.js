@@ -1,6 +1,5 @@
 const Command = require("../models/command");
 const Message = require("../models/message");
-const { groupAPI } = require("../utils/axios");
 const { Discord } = require("../utils/discord");
 const rbxAPI = require("../utils/robloxAPI");
 const clearance = require("../utils/clearance");
@@ -29,10 +28,13 @@ class Update extends Command {
         let userClans = groups.filter(clan => clanList.some(groupId => groupId === clan.group.id));
         const numOfGroups = userClans.length;
 
+        let newNickname = "";
+        let newRole = "";
+
         if (numOfGroups < 1) {
             // also removes any unrelated ranks from the user.
-            await Discord.addUserRoleByName(user.id, clearance.normal[0]);
-            await Discord.setDisplayName(user.id, username);
+            newRole = await Discord.addUserRoleByName(user.id, clearance.normal[0]);
+            newNickname = await Discord.setDisplayName(user.id, username);
             await userDb.update({
                 primary_clan: null
             });
@@ -41,22 +43,29 @@ class Update extends Command {
             const primaryGroup = groups.find(clan => clan.group.id == userDb.data.primary_clan) || userClans[0];
             const rank = primaryGroup.role.rank;
             if (rank == 255) { // Faction Leader
-                await Discord.addUserRoleByName(user.id, clearance.normal[3]);
+                newRole = await Discord.addUserRoleByName(user.id, clearance.normal[3]);
             } else if (rank >= 225 && rank < 255) { // Faction Official
-                await Discord.addUserRoleByName(user.id, clearance.normal[2]);
+                newRole = await Discord.addUserRoleByName(user.id, clearance.normal[2]);
             } else { // Faction Member
-                await Discord.addUserRoleByName(user.id, clearance.normal[1]);
+                newRole = await Discord.addUserRoleByName(user.id, clearance.normal[1]);
             }
-            await Discord.setDisplayName(user.id, username, primaryGroup);
+            newNickname = await Discord.setDisplayName(user.id, username, primaryGroup);
             await userDb.update({
                 primary_clan: primaryGroup.group.id
             });
         }
 
-        throw {
-            title: "Successfully Updated",
-            message: username
-        }
+        const output = new Discord.MessageEmbed()
+            .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
+            .addFields(
+                { name: "Nickname", value: newNickname},
+                { name: "Role", value: newRole}
+            )
+
+        this.reply(interaction, {
+            type: 4,
+            data: await Discord.createAPIMessage(interaction, output)
+        });
     }
 
 }

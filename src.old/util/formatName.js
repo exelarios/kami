@@ -1,7 +1,7 @@
 const blacklistWords = ["The", "Lord"];
 const blacklistsuffix = ["-shi", "-Ka", "-kai"];
 
-function formatName(text) {
+function parseNames(text) {
     var regex  = new RegExp("( |^)" + blacklistWords.join("|") + "( |$)", "g");
     let filtered = text.replace(/[^a-zA-ZōТŌāūо-\s]/g, "").replace(regex, "").replace(/^[\s+]/, "");
     filtered = filtered.split(" ");
