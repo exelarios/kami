@@ -6,15 +6,17 @@ const Slash = require("./models/slash.js");
 
 client.version = "0.3.0";
 client.commands = {};
-
+client.groups = {};
 /*
 TODO:
 - Implement mute, unmute, censor, uncensor
+- Be able to change the group's display name.
 */
 
 async function loadCommands() {
     const slash = new Slash(process.env.TOKEN, client.user.id);
     const registeredCommands = await slash.getCommands();
+    // console.log(registeredCommands);
     const commands = fs.readdirSync("./src/client/commands").filter(file => file.endsWith(".js"));
 
     for (const file of commands) {

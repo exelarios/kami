@@ -1,6 +1,6 @@
 module.exports = {
     none: [
-        "Muted",
+        "Punished",
     ],
     normal: [
         "Commoner",

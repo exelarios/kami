@@ -33,7 +33,12 @@ class Verify extends Command {
                 };
             }
 
-            await user.document.create(userId);
+            await user.document.create({
+                verify: false,
+                userId: userId,
+                primary_clan: null
+            });
+
             this.reply(interaction, {
                 type: 4,
                 data: await Discord.createAPIMessage(interaction, embeds.onVerify())

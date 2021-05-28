@@ -1,4 +1,4 @@
-const db = require("../../server/utils/firebase");
+const db = require("../../shared/firebase");
 const users = db.collection("users");
 
 class User {
@@ -15,13 +15,9 @@ class User {
         })();
     }
 
-    async create(userId) {
+    async create(payload) {
         if (this.exists) throw new Error("User's document has already been created.");
-        await this.userDoc.set({
-            verify: false,
-            userId: userId,
-            primary_clan: null
-        })
+        await this.userDoc.set(payload);
     }
 
     /*

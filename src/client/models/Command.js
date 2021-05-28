@@ -1,4 +1,4 @@
-const db = require("../../server/utils/firebase");
+const db = require("../../shared/firebase");
 const { Discord } = require("../utils/discord");
 const User = require("./user");
 const embeds = require("../utils/embeds");

@@ -15,6 +15,12 @@ class Unmute extends Command {
                     "description": "the offender you want to unmute",
                     "required": true,
                     "type": 6, // User
+                },
+                {
+                    "name": "reasoning",
+                    "description": "the reason why you're letting the offender go.",
+                    "required": true,
+                    "type": 3, // String
                 }
             ]
         });
