@@ -1,19 +1,9 @@
-const User = require("../models/user");
 const Command = require("../models/Command");
 const clearance = require("../utils/clearance");
 const { Discord } = require("../utils/discord");
+const Message = require("../models/message");
+const Collection = require("../../shared/collection");
 
-function getReadableTime(time) {
-    const date = new Date(time * 1000);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const year = date.getFullYear();
-    const month = months[date.getMonth()];
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    return `${month} ${day}, ${year} @ ${hour}:${minutes}:${seconds} UTC`
-}
 class Mute extends Command {
     constructor(client) {
         super(client, {
@@ -49,47 +39,88 @@ class Mute extends Command {
                 },
             ]
         });
+        this.strikes = 5
+        this.days = 14 // Amount of days the violations will be recorded.
     }
 
-    async release(offender) {
-
-    }
-
-    async run(interaction, args, user) {
+    async mute(args, user) {
         const { offender: offenderId, time, record, reasoning } = args;
 
-        const guild = await this.client.guilds.fetch(process.env.GUILDID);
+        const guild = await this.client.guilds.fetch(process.env.GUILD_ID);
         const offender = await guild.members.fetch(offenderId);
         const currentTime = new Date().getTime() / 1000;
         const sentence = 3600 * time;
         const releaseTime = Math.floor(currentTime) + sentence;
-        const offenderDoc = await new User(offenderId);
-        if (!offenderDoc.exists) {
-            await offenderDoc.create({
-                punished: releaseTime,
-                violation: record ? 1 : 0
-            });
-        } else {
-            const violations = parseInt(offenderDoc.data?.violation) || 0;
-            await offenderDoc.update({
-                punished: releaseTime,
-                violation: record ? violations + 1 : violations
-            });
-        }
-        await Discord.addUserRoleByName(offenderId, clearance.none[0]);
+        const document = new Collection("users", offenderId);
+        const doesExist = await document.exists();
+
+        const onRecordTime = Math.floor(currentTime + (this.days * 24 * 3600));
 
         const muteChannel = guild.channels.cache.find(channel => channel.name == "punish-log");
         if (!muteChannel) throw new Error("Failed to find `punish-log` channel.");
 
+        if (!doesExist) {
+            await document.create({
+                punish: releaseTime,
+                violation: record ? 1 : 0,
+                clearAt: onRecordTime
+            });
+        } else {
+            const snapshot = await document.data();
+            // Checks if the user has already been muted.
+            if (snapshot?.punish > 0) {
+                throw new Message("Violation Report", "The offender is already muted.");
+            }
+            const violations = snapshot?.violation || 0;
+            let onRecord = record ? violations + 1 : violations;
+
+            if (snapshot?.clearAt > currentTime && onRecord >= this.strikes) {
+                // Bans the user and clears their violations.
+                await document.update({
+                    punish: 0,
+                    violation: 0,
+                    clearAt: 0
+                });
+                await offender.ban({
+                    reason: "Exceeded too much violations."
+                });
+
+                const report = new Discord.MessageEmbed()
+                    .setAuthor("Banned Successfully Filed", "https://i.imgur.com/lyyexpK.gif")
+                    .addFields(
+                        { 
+                            name: offender.nickname || offender.user.username, 
+                            value: "has been permanently banned for violating our server guidelines."
+                        }
+                    )
+                    .setTimestamp();
+                muteChannel.send(report);
+                return;
+            }
+
+            if (snapshot?.clearAt < currentTime) {
+                onRecord = record ? 1 : 0;
+            }
+
+            const clearTime = snapshot?.clearAt > currentTime ? snapshot?.clearAt : onRecordTime;
+            await document.update({
+                punish: releaseTime,
+                violation: onRecord,
+                clearAt: clearTime
+            });
+        }
+
+        await Discord.addUserRoleByName(offenderId, clearance.none[0]);
+
         const report = new Discord.MessageEmbed()
             .setTitle(offender.nickname || offender.user.username)
-            .setAuthor("Violation Report")
+            .setAuthor("Violation Report", "https://i.imgur.com/lyyexpK.gif")
             .setThumbnail(offender.user.displayAvatarURL())
             .addField("Username", `${offender.user.username}#${offender.user.discriminator}`, true)
             .addField("Sentence", `${time} hours`, true)
             .addFields(
                 {name: "Reasoning", value: reasoning},
-                {name: "Release Time", value: getReadableTime(releaseTime)},
+                {name: "Release Time", value: Discord.getReadableTime(releaseTime)},
                 {name: "Filed by", value: `${user.username}#${user.discriminator}`}
             )
             .setTimestamp();
@@ -102,8 +133,46 @@ class Mute extends Command {
                     name: offender.nickname || offender.user.username, 
                     value: "has been temporary muted for violating our server guidelines."
                 }
-            )
+            );
+        
+        return output;
+    }
 
+    async onBlacklisted(message) {
+        let banned = this.client.bannedWords;
+        for(let i = 0; i < banned.length; i++) {
+            if (message.content.includes(banned[i])) {
+                try {
+                    const output = await this.mute({
+                        offender: message.author.id,
+                        time: 24,
+                        record: true,
+                        reasoning: "Inapporiate rhetoric."
+                    }, message.author);
+                    message.channel.send(output);
+                } catch(error) {
+                    console.error(error);
+                }
+                return;
+            }
+        }
+    }
+
+    async memberAdded(member) {
+        const memberId = member.user.id;
+        const document = new Collection("users", memberId);
+        const doesExist = document.exists();
+        if (!doesExist) return;
+        const snapshot = await document.data();
+        const currentTime = new Date().getTime() / 1000;
+        if (snapshot?.punish > currentTime) {
+            await Discord.addUserRoleByName(memberId, "Punished");
+            return;
+        }
+    }
+
+    async run(interaction, args, user) {
+        const output = await this.mute(args, user);
         this.reply(interaction, {
             type: 4,
             data: await Discord.createAPIMessage(interaction, output)

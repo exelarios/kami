@@ -1,4 +1,4 @@
-const { mainAPI, userAPI, groupAPI } = require("./axios");
+const { mainAPI, userAPI, groupAPI } = require("../../shared/axios");
 
 async function getUserIdByUsername(username) {
     const response = await mainAPI.get(`users/get-by-username?username=${username}`);

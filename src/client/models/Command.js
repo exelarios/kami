@@ -1,8 +1,8 @@
 const db = require("../../shared/firebase");
 const { Discord } = require("../utils/discord");
-const User = require("./user");
 const embeds = require("../utils/embeds");
 const Message = require("../models/message");
+const Collection = require("../../shared/collection");
 
 class Command {
 
@@ -43,6 +43,7 @@ class Command {
     }
 
     async hasPermission(interaction, user) {
+        // If "member" doesn't exist; this means it's called inside of direct message.
         if (interaction.member == undefined) {
             this.reply(interaction, {
                 type: 4,
@@ -66,13 +67,11 @@ class Command {
         try {
             const authorId = interaction.member.user.id;
             if (!await this.hasPermission(interaction)) return;
-            // If "member" doesn't exist; this means it's called inside of direct message.
             const user = await this.client.users.fetch(authorId);
-            if (!user.document) {
-                user.document = await new User(authorId);
-            }
+            user.document = new Collection("users", authorId);
+            const snapshot = await user.document.data();
             // Checks if the command requires the user to be verified.
-            if (!user.document.isVerified && this.verifyRequired)
+            if (!snapshot?.verify && this.verifyRequired)
                 throw new Message("Access Denied", "You must be verified in order to run this command.");
             return await this.run(interaction, args, user);
         } catch(error) {

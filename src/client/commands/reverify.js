@@ -25,7 +25,7 @@ class Reverify extends Command {
     async run(interaction, args, user) {
         const { username } = args;
 
-        if (!user.document.exists) 
+        if (!await user.document.exists()) 
             throw new Message("Gekokujō's Verification", "Your account isn't associated with any roblox account, please verify using `/verify`");
 
         const userId = await rbxAPI.getUserIdByUsername(username);

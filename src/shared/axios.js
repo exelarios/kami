@@ -13,7 +13,7 @@ const groupAPI = axios.create({
     baseURL: "https://groups.roblox.com/"
 })
 
-const slashAPI = axios.create({
+const discordAPI = axios.create({
     baseURL: "https://discord.com/api/v8/"
 })
 
@@ -21,5 +21,5 @@ module.exports = {
     mainAPI,
     userAPI,
     groupAPI,
-    slashAPI
+    discordAPI
 }

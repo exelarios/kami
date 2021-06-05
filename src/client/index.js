@@ -1,17 +1,12 @@
-const GROUP_ID = process.env.COMMUNITY_GROUP;
-
 const fs = require("fs");
 const { client } = require("./utils/discord");
 const Slash = require("./models/slash.js");
+const Collection = require("../shared/collection");
 
 client.version = "0.3.0";
 client.commands = {};
 client.groups = {};
-/*
-TODO:
-- Implement mute, unmute, censor, uncensor
-- Be able to change the group's display name.
-*/
+client.bannedWords = null;
 
 async function loadCommands() {
     const slash = new Slash(process.env.TOKEN, client.user.id);
@@ -35,10 +30,25 @@ async function loadCommands() {
     }
 }
 
+async function loadBlacklistedWords() {
+    // Caching the blacklisted words so it doesn't have to 
+    // fetch from the database each time a person sends a message.
+    const words = new Collection("blacklisted", "words");
+    const snapshot = await words.data();
+    client.bannedWords = snapshot.banned;
+}
+
 async function onStart() {
+    await loadBlacklistedWords();
     await loadCommands();
+    client.commands["unmute"].release();
     client.user.setActivity("with shogun", {type: "PLAYING"});
     console.log("Kami is Online.");
+}
+
+async function onMessage(message) {
+    if (message.author.bot) return;
+    client.commands["mute"].onBlacklisted(message);
 }
 
 async function onInteraction(interaction) {
@@ -53,7 +63,13 @@ async function onInteraction(interaction) {
     await client.commands[key].execute(interaction, args);
 }
 
+async function onMemberAdded(member) {
+    client.commands["mute"].memberAdded(member);
+}
+
 client.on("ready", onStart);
+client.on("message", onMessage);
+client.on("guildMemberAdd", onMemberAdded);
 client.ws.on("INTERACTION_CREATE", onInteraction);
 
 module.exports = client;

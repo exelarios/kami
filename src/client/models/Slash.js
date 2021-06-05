@@ -1,5 +1,5 @@
-const { slashAPI } = require("../utils/axios");
-const axios = require("axios");
+const { discordAPI } = require("../../shared/axios");
+
 class Slash {
 
     constructor(token, clientId) {
@@ -23,7 +23,7 @@ class Slash {
         if (options?.commandId)
             url += `/${options.commandId}`;
 
-        const response = await slashAPI.get(url, {
+        const response = await discordAPI.get(url, {
             headers: { 
                 Authorization: `Bot ${this.token}` 
             }
@@ -42,7 +42,7 @@ class Slash {
         if (!options.description)
             throw new Error("options is missing description");
 
-        const response = await slashAPI.post(`applications/${this.clientId}/commands`, options, {
+        const response = await discordAPI.post(`applications/${this.clientId}/commands`, options, {
             headers: { 
                 Authorization: `Bot ${this.token}` 
             }
@@ -65,7 +65,7 @@ class Slash {
         if (!options.name || !options.description)
             throw new Error("options is missing name or description property!");
 
-        const res = await slashAPI.patch(`applications/${this.clientId}/commands/${commandId}`, options, {
+        const res = await discordAPI.patch(`applications/${this.clientId}/commands/${commandId}`, options, {
             headers: { Authorization: `Bot ${this.token}` },
         });
 
@@ -82,7 +82,7 @@ class Slash {
         if (typeof commandId !== "string")
             throw new Error("commandID must be of type string. Received: " + typeof commandId);
 
-        const response = await slashAPI.put(
+        const response = await discordAPI.put(
             `applications/${this.clientId}/guilds/${guildId}/commands/${commandId}/permissions`,
             {
                 permissions: permissions

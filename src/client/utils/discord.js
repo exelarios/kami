@@ -1,4 +1,5 @@
 const Discord = require("discord.js");
+const Collection = require("../../shared/collection");
 const clearance = require("./clearance");
 
 const client = new Discord.Client();
@@ -23,7 +24,7 @@ Discord.createAPIMessage = async function(interaction, content) {
 }
 
 Discord.getRoleByName = async function(name) {
-    const guild = await client.guilds.fetch(process.env.GUILDID);
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
     const role = guild.roles.cache.find(role => role.name == name);
     if (!role) throw new Error(`Failed to find \`${name}\` within roles.`);
     return role.id;
@@ -31,7 +32,7 @@ Discord.getRoleByName = async function(name) {
 
 Discord.addUserRoleByName = async function(authorId, roleName) {
     const hasRole = await this.hasRole(authorId, roleName);
-    const guild = await client.guilds.fetch(process.env.GUILDID);
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
     const member = await guild.members.fetch(authorId);
 
     // Remove any potential irrelevant roles.
@@ -54,7 +55,7 @@ Discord.removeUserRoleByName = async function(authorId, roleName) {
     const hasRole = await this.hasRole(authorId, roleName);
     if (!hasRole) return false;
 
-    const guild = await client.guilds.fetch(process.env.GUILDID);
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
     const member = await guild.members.fetch(authorId);
     const roleId = await this.getRoleByName(roleName);
     await member.roles.remove(roleId);
@@ -62,7 +63,7 @@ Discord.removeUserRoleByName = async function(authorId, roleName) {
 }
 
 Discord.setDisplayName = async function(authorId, username, clan) {
-    const guild = await client.guilds.fetch(process.env.GUILDID);
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
     const member = await guild.members.fetch(authorId);
 
     let content = null;
@@ -71,7 +72,10 @@ Discord.setDisplayName = async function(authorId, username, clan) {
         content = `[Commoner] ${username}`;
         await member.setNickname(content.slice(0, 32));
     } else {
-        const groupName = this.parseText(clan.group.name);
+        const document = new Collection("groups", clan.group.id)
+        const doesExist = await document.exists();
+        const snapshot = await document.data();
+        const groupName = doesExist ? snapshot?.displayName : this.parseText(clan.group.name);
         const groupRole = this.parseText(clan.role.name);
         content = `[${groupName}] ${groupRole} | ${username}`;
         await member.setNickname(content.slice(0, 32));
@@ -80,7 +84,7 @@ Discord.setDisplayName = async function(authorId, username, clan) {
 }
 
 Discord.hasRole = async function(authorId, roleName) {
-    const guild = await client.guilds.fetch(process.env.GUILDID);
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
     const member = await guild.members.fetch(authorId);
     return member.roles.cache.some(role => role.name == roleName);
 }
@@ -105,6 +109,18 @@ Discord.parseText = function(text) {
             return finalWord;
         }
     }
+}
+
+Discord.getReadableTime = function(time) {
+    const date = new Date(time * 1000);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const year = date.getFullYear();
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const hour = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    return `${month} ${day}, ${year} @ ${hour}:${minutes}:${seconds} UTC`
 }
 
 module.exports = {

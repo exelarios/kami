@@ -2,7 +2,7 @@ const Command = require("../models/command");
 const clearance = require("../utils/clearance");
 const Message = require("../models/message");
 const rbxAPI = require("../utils/robloxAPI");
-const GroupDb = require("../models/group");
+const Collection = require("../../shared/collection");
 
 class Group extends Command {
     constructor(client) {
@@ -37,22 +37,19 @@ class Group extends Command {
         if (!targetGroup)
             throw new Message("InvalidInputException", "Failed to find a group with the assiociated groupId.")
 
-        let groupDb = this.client.groups[targetGroup];
-        if (!groupDb) {
-            this.client.groups[targetGroup] = await new GroupDb(targetGroup.toString());
-            groupDb = this.client.groups[targetGroup];
-        }
-
-        if (!groupDb.exists) {
-            await groupDb.create(displayName);
-        }
-
-        if (displayName) {
-            await groupDb.update({
+        const document = new Collection("groups", groupId);
+        const doesExist = document.exists();
+        if (!doesExist) {
+            await document.create({
+                displayName: displayName
+            });
+        } else {
+            await document.update({
                 displayName: displayName
             });
         }
-        throw new Message("Update Group Information", "updating");
+
+        throw new Message("Update Group Information", `Updated to ${displayName}`);
     }
 
 }

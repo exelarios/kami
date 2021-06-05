@@ -49,7 +49,7 @@ class Ping extends Command {
                         })
                     }
 
-                    await slash.editPermissions(permissions, process.env.GUILDID, command.id);
+                    await slash.editPermissions(permissions, process.env.GUILD_ID, command.id);
                 }
 
                 throw new Message(`Updating ${command.name} Command`, "ok");
