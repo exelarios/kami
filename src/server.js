@@ -1,19 +1,20 @@
 require('dotenv').config();
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
-const client = require("./util/discord");
+const client = require("./client/index");
 
-const users = require("./routes/api/users");
+const users = require("./server/routes/api/users");
 
 const app = express();
 
 app.get("/", (req, res) => {
     res.send("tora was here.")
-})
+});
 
-app.use(cors());
-app.use(bodyParser.json()); 
+app.use(express.urlencoded({
+    extended: true
+}));
+
 app.use("/api/users", users);
 
 client.login(process.env.TOKEN);
