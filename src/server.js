@@ -11,9 +11,8 @@ app.get("/", (req, res) => {
     res.send("tora was here.")
 });
 
-app.use(express.urlencoded({
-    extended: true
-}));
+app.use(cors());
+app.use(express.json());
 
 app.use("/api/users", users);
 

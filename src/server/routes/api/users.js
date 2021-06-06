@@ -42,7 +42,11 @@ router.put("/:id", protected, async (req, res) => {
     const { id } = req.params;
     const document = new Collection("users", id);
     try {
-        await document.update(req.body);
+        await document.update({
+            primary_clan: req.body?.primary_clan,
+            verify: req.body?.verify,
+            last_updated: Math.floor(new Date().getTime() / 1000)
+        });
         res.send({
             success: true
         });
