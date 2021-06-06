@@ -1,7 +1,7 @@
 const db = require("../../shared/firebase");
 const { Discord } = require("../utils/discord");
 const embeds = require("../utils/embeds");
-const Message = require("../models/message");
+const Message = require("./message");
 const Collection = require("../../shared/collection");
 
 class Command {
@@ -65,8 +65,8 @@ class Command {
 
     async execute(interaction, args) {
         try {
-            const authorId = interaction.member.user.id;
             if (!await this.hasPermission(interaction)) return;
+            const authorId = interaction.member.user.id;
             const user = await this.client.users.fetch(authorId);
             user.document = new Collection("users", authorId);
             const snapshot = await user.document.data();
