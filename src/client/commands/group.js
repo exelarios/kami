@@ -38,7 +38,7 @@ class Group extends Command {
             throw new Message("InvalidInputException", "Failed to find a group with the assiociated groupId.")
 
         const document = new Collection("groups", groupId);
-        const doesExist = document.exists();
+        const doesExist = await document.exists();
         if (!doesExist) {
             await document.create({
                 displayName: displayName
