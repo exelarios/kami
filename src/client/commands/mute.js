@@ -1,4 +1,4 @@
-const Command = require("../models/Command");
+const Command = require("../models/command");
 const clearance = require("../utils/clearance");
 const { Discord } = require("../utils/discord");
 const Message = require("../models/message");
