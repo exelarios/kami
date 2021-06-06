@@ -43,6 +43,9 @@ router.put("/:id", protected, async (req, res) => {
     const document = new Collection("users", id);
     try {
         await document.update(req.body);
+        res.send({
+            success: true
+        });
     } catch(error) {
         res.status(404).send({
             success: false,
