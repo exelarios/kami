@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { client } = require("./utils/discord");
-const Slash = require("./models/slash.js");
+const Slash = require("../client/models/Slash");
 const Collection = require("../shared/collection");
 
 client.version = "0.3.0";
