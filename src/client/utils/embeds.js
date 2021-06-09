@@ -11,7 +11,7 @@ function onVerify() {
     return new Discord.MessageEmbed()
         .setAuthor("Gekokujō's Verification", "https://i.imgur.com/lyyexpK.gif")
         .setTitle("Almost there . . . ")
-        .addField(`Join the place & confirm your account.`, "https://www.roblox.com/games/6459111781/tora-smells")
+        .addField(`Join the place & confirm your account.`, process.env.VERIFY_URL)
         .setFooter("If you didn't receive anything please ping an active moderator.");
 }
 

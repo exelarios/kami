@@ -7,7 +7,7 @@ class Verify extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
-            description: "verifies identity between your roblox and discord account.",
+            description: "Verifiy your identity between your roblox and discord account.",
             cooldown: 1,
             public: true,
             verifyRequired: false,

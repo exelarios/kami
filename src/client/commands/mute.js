@@ -8,7 +8,7 @@ class Mute extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
-            description: "Checks if the commands are working.",
+            description: "Punish a member for a certain amount of time.",
             verifyRequired: false,
             permissions: clearance.admin,
             public: false,
@@ -40,7 +40,7 @@ class Mute extends Command {
             ]
         });
         this.strikes = 5
-        this.days = 14 // Amount of days the violations will be recorded.
+        this.days = 30 // Amount of days the violations will be recorded.
     }
 
     async mute(args, user) {
@@ -141,7 +141,8 @@ class Mute extends Command {
     async onBlacklisted(message) {
         let banned = this.client.bannedWords;
         for(let i = 0; i < banned.length; i++) {
-            if (message.content.includes(banned[i])) {
+            let msg = message.content.toLowerCase();
+            if (msg.includes(banned[i])) {
                 try {
                     const output = await this.mute({
                         offender: message.author.id,

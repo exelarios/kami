@@ -6,7 +6,7 @@ class fUpdate extends Command {
     constructor(client) {
         super(client, {
             channelOnly: true,
-            description: "force updates the user's roles and tehir nickname.",
+            description: "force updates the user's roles and their nickname.",
             permissions: clearance.admin,
             verifyRequired: false,
             public: false,

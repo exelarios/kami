@@ -3,7 +3,7 @@ const { client } = require("./utils/discord");
 const Slash = require("../client/models/slash");
 const Collection = require("../shared/collection");
 
-client.version = "0.3.0";
+client.version = "0.3.1";
 client.commands = {};
 client.groups = {};
 client.bannedWords = null;
