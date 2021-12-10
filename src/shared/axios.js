@@ -18,6 +18,7 @@ const discordAPI = axios.create({
 })
 
 module.exports = {
+    axios,
     mainAPI,
     userAPI,
     groupAPI,
