@@ -15,7 +15,10 @@ app.get("/", (req, res) => {
 app.use(cors());
 app.use(express.json());
 
+// Users API
 app.use("/api/users", users);
+
+// Discord API
 app.use("/api/discord", discord);
 
 client.login(process.env.TOKEN);
